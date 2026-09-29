@@ -4,7 +4,7 @@
   "codeowners": [],
   "config_flow": true,
   "dependencies": ["frontend", "http", "lovelace"],
-  "documentation": "https://example.com/rewards-tracker",
+  "documentation": "https://github.com/ceejeeb/HomeAssistant-RewardsTracker",
   "iot_class": "calculated",
   "requirements": [],
   "version": "0.1.0"
