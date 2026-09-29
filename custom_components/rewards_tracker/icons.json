@@ -1,0 +1,24 @@
+{
+  "config": {
+    "step": {
+      "user": "mdi:account-child",
+      "add_reward": "mdi:gift",
+      "rewards_menu": "mdi:gift"
+    }
+  },
+  "options": {
+    "step": {
+      "settings": "mdi:tune",
+      "rewards": "mdi:gift",
+      "balances": "mdi:pencil",
+      "add_reward": "mdi:gift",
+      "edit_reward": "mdi:pencil"
+    }
+  },
+  "services": {
+    "award_tick": "mdi:check",
+    "deposit": "mdi:bank-transfer-in",
+    "withdraw": "mdi:bank-transfer-out",
+    "spend": "mdi:cart"
+  }
+}

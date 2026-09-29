@@ -1,0 +1,11 @@
+{
+  "domain": "rewards_tracker",
+  "name": "Rewards Tracker",
+  "codeowners": [],
+  "config_flow": true,
+  "dependencies": ["frontend", "http", "lovelace"],
+  "documentation": "https://example.com/rewards-tracker",
+  "iot_class": "calculated",
+  "requirements": [],
+  "version": "0.1.0"
+}

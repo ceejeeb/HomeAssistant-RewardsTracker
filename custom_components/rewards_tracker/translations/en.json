@@ -1,0 +1,133 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Add a child",
+        "description": "Ticks build into stars, and stars build into spending money. Savings earn interest once a day at 07:00.",
+        "data": {
+          "name": "Name",
+          "ticks_per_star": "Ticks for one star",
+          "stars_per_pound": "Stars for one unit of money",
+          "daily_interest_percent": "Savings interest per day (%)",
+          "currency_symbol": "Currency symbol"
+        }
+      },
+      "rewards_menu": {
+        "title": "Ways to spend",
+        "description": "Current list: {rewards}",
+        "menu_options": {
+          "add_reward": "Add a way to spend",
+          "finish": "Finish"
+        }
+      },
+      "add_reward": {
+        "title": "Add a way to spend",
+        "data": {
+          "description": "Description",
+          "cost": "Cost",
+          "icon": "Icon"
+        }
+      }
+    },
+    "error": {
+      "name_required": "Enter a name.",
+      "name_used": "A child with that name already exists.",
+      "currency_too_long": "Use 1 to 4 characters.",
+      "description_required": "Enter a description.",
+      "icon_invalid": "Choose an icon such as mdi:book-open-variant."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Configure",
+        "menu_options": {
+          "settings": "Rules and currency",
+          "rewards": "Ways to spend",
+          "balances": "Correct balances"
+        }
+      },
+      "settings": {
+        "title": "Rules and currency",
+        "data": {
+          "name": "Name",
+          "ticks_per_star": "Ticks for one star",
+          "stars_per_pound": "Stars for one unit of money",
+          "daily_interest_percent": "Savings interest per day (%)",
+          "currency_symbol": "Currency symbol"
+        },
+        "data_description": {
+          "ticks_per_star": "Existing ticks at or above this number convert when you next award a tick, or when you correct balances.",
+          "stars_per_pound": "Existing stars at or above this number convert the same way."
+        }
+      },
+      "rewards": {
+        "title": "Ways to spend",
+        "description": "Current list: {rewards}",
+        "data": {
+          "choice": "Choose"
+        }
+      },
+      "add_reward": {
+        "title": "Add a way to spend",
+        "data": {
+          "description": "Description",
+          "cost": "Cost",
+          "icon": "Icon"
+        }
+      },
+      "edit_reward": {
+        "title": "Edit a way to spend",
+        "data": {
+          "description": "Description",
+          "cost": "Cost",
+          "icon": "Icon",
+          "delete": "Remove this way to spend"
+        }
+      },
+      "balances": {
+        "title": "Correct balances",
+        "description": "Ticks or stars already past the threshold are converted when you save. Every 100 interest points become 1 unit of savings.",
+        "data": {
+          "ticks": "Ticks",
+          "stars": "Stars",
+          "balance": "Spending money",
+          "savings": "Savings",
+          "interest_pence": "Interest toward the next unit (0 to 99)"
+        }
+      }
+    },
+    "error": {
+      "name_required": "Enter a name.",
+      "name_used": "A child with that name already exists.",
+      "currency_too_long": "Use 1 to 4 characters.",
+      "description_required": "Enter a description.",
+      "icon_invalid": "Choose an icon such as mdi:book-open-variant.",
+      "balances_invalid": "Enter whole numbers."
+    }
+  },
+  "services": {
+    "award_tick": {
+      "name": "Award tick",
+      "description": "Adds one tick. Ticks and stars convert when they reach this child's thresholds."
+    },
+    "deposit": {
+      "name": "Deposit",
+      "description": "Moves 1 from spending money into savings."
+    },
+    "withdraw": {
+      "name": "Withdraw",
+      "description": "Moves 1 from savings back into spending money."
+    },
+    "spend": {
+      "name": "Spend",
+      "description": "Subtracts one configured reward's cost from spending money.",
+      "fields": {
+        "reward_id": {
+          "name": "Reward",
+          "description": "Id of a spend option. The ids are on the Money sensor, in the rewards attribute."
+        }
+      }
+    }
+  }
+}

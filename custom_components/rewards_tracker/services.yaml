@@ -1,0 +1,39 @@
+award_tick:
+  name: Award tick
+  description: Adds one tick. Ticks and stars convert when they reach this child's thresholds.
+  target:
+    entity:
+      domain: sensor
+      integration: rewards_tracker
+
+deposit:
+  name: Deposit
+  description: Moves 1 from spending money into savings. Does nothing when spending money is 0. The interest bar is left as it is.
+  target:
+    entity:
+      domain: sensor
+      integration: rewards_tracker
+
+withdraw:
+  name: Withdraw
+  description: Moves 1 from savings back into spending money. Does nothing when savings are 0. The interest bar is left as it is.
+  target:
+    entity:
+      domain: sensor
+      integration: rewards_tracker
+
+spend:
+  name: Spend
+  description: Subtracts one configured reward's cost from spending money.
+  target:
+    entity:
+      domain: sensor
+      integration: rewards_tracker
+  fields:
+    reward_id:
+      name: Reward
+      description: Id of a spend option. The ids are on the Money sensor, in the rewards attribute.
+      required: true
+      example: a1b2c3d4
+      selector:
+        text: {}
