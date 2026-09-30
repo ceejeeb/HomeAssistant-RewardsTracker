@@ -51,7 +51,7 @@ If the dashboard is in YAML mode, add the resource yourself:
 
 ```yaml
 resources:
-  - url: /rewards_tracker/rewards-tracker-card.js?v=0.2.0
+  - url: /rewards_tracker/rewards-tracker-card.js?v=0.1.2
     type: module
 ```
 
