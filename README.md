@@ -45,13 +45,13 @@ type: custom:rewards-tracker-card
 entity: sensor.charlie_money
 ```
 
-The card shows money, savings, the three progress bars, a Tick button, Deposit and Withdraw of 1, and one button per way to spend. A button is faded when that balance cannot cover it.
+The card runs top to bottom: ticks, stars, money, then savings. The plus on the ticks row awards one. Spend buttons sit under the money. Two arrows beside savings move 1 into savings or back out. A button is faded when that balance cannot cover it. The interest bar sits under savings.
 
 If the dashboard is in YAML mode, add the resource yourself:
 
 ```yaml
 resources:
-  - url: /rewards_tracker/rewards-tracker-card.js?v=0.1.3
+  - url: /rewards_tracker/rewards-tracker-card.js?v=0.1.4
     type: module
 ```
 

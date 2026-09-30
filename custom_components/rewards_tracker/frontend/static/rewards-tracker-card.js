@@ -16,14 +16,6 @@ function formatAmount(symbol, amount) {
   return `${mark}${amount}`;
 }
 
-function formatPoints(value) {
-  const rounded = Math.round(Number(value) * 100) / 100;
-  if (!Number.isFinite(rounded)) {
-    return "0";
-  }
-  return String(rounded);
-}
-
 function safeIcon(icon) {
   return /^[a-z0-9-]+:[a-z0-9-]+$/i.test(icon || "") ? icon : "mdi:cash";
 }
@@ -130,6 +122,7 @@ class RewardsTrackerCard extends HTMLElement {
       ? `<p class="error">${escapeHtml(this._error)}</p>`
       : "";
 
+    const unit = formatAmount(symbol, 1);
     const spend = rewards.length
       ? rewards
           .map((reward) => {
@@ -148,31 +141,33 @@ class RewardsTrackerCard extends HTMLElement {
 
     this.shadowRoot.innerHTML = this._shell(`
       <div class="header">${escapeHtml(attr.child_name)}</div>
-      <div class="stats">
-        <div class="stat">
-          <div class="label">Money</div>
-          <div class="value">${escapeHtml(formatAmount(symbol, balance))}</div>
-        </div>
-        <div class="stat">
+      ${error}
+      ${this._tier(tier1Name, tier1Icon, ticks, tier1Count, true)}
+      ${this._tier(tier2Name, tier2Icon, stars, tier2Count, false)}
+      <div class="pot">
+        <div class="label">Money</div>
+        <div class="value">${escapeHtml(formatAmount(symbol, balance))}</div>
+      </div>
+      <div class="spend-list">${spend}</div>
+      <div class="pot savings">
+        <div class="savings-main">
           <div class="label">Savings</div>
           <div class="value">${escapeHtml(formatAmount(symbol, savings))}</div>
         </div>
+        <div class="transfers">
+          <button class="icon-btn" data-action="deposit" aria-label="Deposit ${escapeHtml(unit)}" ${balance < 1 ? "disabled" : ""}>
+            <ha-icon icon="mdi:arrow-down-bold"></ha-icon>
+          </button>
+          <button class="icon-btn" data-action="withdraw" aria-label="Withdraw ${escapeHtml(unit)}" ${savings < 1 ? "disabled" : ""}>
+            <ha-icon icon="mdi:arrow-up-bold"></ha-icon>
+          </button>
+        </div>
       </div>
-      ${this._tier(tier1Name, tier1Icon, ticks, tier1Count)}
-      ${this._tier(tier2Name, tier2Icon, stars, tier2Count)}
-      ${this._meter("Interest", interest, 100, `${formatPoints(interest)}/100 toward the next ${formatAmount(symbol, 1)}`)}
-      <div class="actions">
-        <button class="btn primary" data-action="award_tick">${escapeHtml(tier1Name)}</button>
-        <button class="btn" data-action="deposit" ${balance < 1 ? "disabled" : ""}>Deposit ${escapeHtml(formatAmount(symbol, 1))}</button>
-        <button class="btn" data-action="withdraw" ${savings < 1 ? "disabled" : ""}>Withdraw ${escapeHtml(formatAmount(symbol, 1))}</button>
-      </div>
-      ${error}
-      <div class="spend-title">Spend</div>
-      <div class="spend-list">${spend}</div>
+      ${this._meter("Interest", interest, 100)}
     `);
   }
 
-  _tier(label, icon, earned, total) {
+  _tier(label, icon, earned, total, award) {
     const safe = escapeHtml(safeIcon(icon));
     const shown = Math.max(1, Math.min(Number(total) || 1, 24));
     const have = Math.max(0, Math.min(Number(earned) || 0, shown));
@@ -183,11 +178,14 @@ class RewardsTrackerCard extends HTMLElement {
         `<span class="token ${state}"><ha-icon icon="${safe}"></ha-icon></span>`
       );
     }
+    const action = award
+      ? `<button class="icon-btn" data-action="award_tick" aria-label="${escapeHtml(label)}"><ha-icon icon="mdi:plus"></ha-icon></button>`
+      : "";
     return `
       <div class="tier">
         <div class="meter-row">
           <span>${escapeHtml(label)}</span>
-          <span class="caption">${have}/${shown}</span>
+          ${action}
         </div>
         <div class="icon-row" role="img" aria-label="${escapeHtml(label)} ${have} of ${shown}">
           ${tokens.join("")}
@@ -196,13 +194,12 @@ class RewardsTrackerCard extends HTMLElement {
     `;
   }
 
-  _meter(label, value, total, caption) {
+  _meter(label, value, total) {
     const width = barWidth(value, total);
     return `
       <div class="meter">
         <div class="meter-row">
           <span>${escapeHtml(label)}</span>
-          <span class="caption">${escapeHtml(caption)}</span>
         </div>
         <div class="track" role="meter" aria-label="${escapeHtml(label)}" aria-valuemin="0" aria-valuemax="${total}" aria-valuenow="${Number(value) || 0}">
           <div class="fill" style="width: ${width}%"></div>
@@ -221,30 +218,28 @@ class RewardsTrackerCard extends HTMLElement {
           font-weight: 500;
           margin-bottom: 12px;
         }
-        .stats {
-          display: grid;
-          grid-template-columns: 1fr 1fr;
-          gap: 8px;
-          margin-bottom: 14px;
-        }
-        .stat {
-          background: var(--secondary-background-color, rgba(0, 0, 0, 0.04));
-          border-radius: 12px;
-          padding: 12px;
-        }
-        .label, .caption, .hint, .spend-title {
+        .label, .hint {
           color: var(--secondary-text-color);
         }
         .label { font-size: 12px; }
         .value { font-size: 28px; font-weight: 500; line-height: 1.2; }
-        .meter, .tier { margin-bottom: 12px; }
+        .meter, .tier { margin-bottom: 14px; }
+        .pot { margin-bottom: 4px; }
+        .savings {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          gap: 12px;
+          margin-top: 14px;
+          margin-bottom: 10px;
+        }
+        .transfers { display: flex; gap: 8px; }
         .meter-row, .spend {
           display: flex;
           align-items: center;
           gap: 8px;
         }
         .meter-row { justify-content: space-between; font-size: 13px; margin-bottom: 6px; }
-        .caption { color: var(--secondary-text-color); }
         .icon-row {
           display: flex;
           flex-wrap: wrap;
@@ -263,7 +258,7 @@ class RewardsTrackerCard extends HTMLElement {
           opacity: 0.22;
         }
         .track {
-          height: 8px;
+          height: 18px;
           border-radius: 99px;
           background: var(--divider-color);
           overflow: hidden;
@@ -272,37 +267,25 @@ class RewardsTrackerCard extends HTMLElement {
           height: 100%;
           background: var(--primary-color);
         }
-        .actions {
-          display: grid;
-          grid-template-columns: 1fr 1fr;
-          gap: 8px;
-          margin-top: 14px;
-        }
-        .btn, .spend {
+        .icon-btn, .spend {
           font: inherit;
           color: var(--primary-text-color);
           cursor: pointer;
         }
-        .btn {
+        .icon-btn {
+          width: 40px;
+          height: 40px;
           border: none;
-          border-radius: 10px;
-          padding: 10px 12px;
+          border-radius: 12px;
+          padding: 0;
+          display: grid;
+          place-items: center;
           background: var(--secondary-background-color, rgba(0, 0, 0, 0.06));
         }
-        .btn.primary {
-          grid-column: 1 / -1;
-          background: var(--primary-color);
-          color: var(--text-primary-color, #fff);
-        }
-        .btn[disabled], .spend[disabled] {
+        .icon-btn ha-icon { --mdc-icon-size: 22px; }
+        .icon-btn[disabled], .spend[disabled] {
           opacity: 0.4;
           cursor: default;
-        }
-        .spend-title {
-          margin-top: 16px;
-          font-size: 12px;
-          letter-spacing: 0.04em;
-          text-transform: uppercase;
         }
         .spend {
           width: 100%;

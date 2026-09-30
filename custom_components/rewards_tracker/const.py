@@ -5,7 +5,7 @@ from __future__ import annotations
 from typing import Final
 
 DOMAIN: Final = "rewards_tracker"
-VERSION: Final = "0.1.3"
+VERSION: Final = "0.1.4"
 
 CONF_NAME: Final = "name"
 CONF_TIER1_NAME: Final = "tier1_name"
