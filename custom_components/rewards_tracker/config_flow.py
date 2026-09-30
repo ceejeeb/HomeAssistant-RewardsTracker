@@ -27,7 +27,12 @@ from .const import (
     CONF_DELETE,
     CONF_DESCRIPTION,
     CONF_ICON,
+    CONF_INTEREST_CALC_UNIT,
+    CONF_INTEREST_CALC_VALUE,
+    CONF_INTEREST_EVERY_UNIT,
+    CONF_INTEREST_EVERY_VALUE,
     CONF_INTEREST_PENCE,
+    CONF_INTEREST_RATE,
     CONF_NAME,
     CONF_REWARDS,
     CONF_SAVINGS,
@@ -43,7 +48,11 @@ from .const import (
     CONF_TIER2_NAME,
     CONF_UNITS_EARNED,
     DEFAULT_CURRENCY_SYMBOL,
-    DEFAULT_DAILY_INTEREST_PERCENT,
+    DEFAULT_INTEREST_CALC_UNIT,
+    DEFAULT_INTEREST_CALC_VALUE,
+    DEFAULT_INTEREST_EVERY_UNIT,
+    DEFAULT_INTEREST_EVERY_VALUE,
+    DEFAULT_INTEREST_RATE,
     DEFAULT_REWARD_COST,
     DEFAULT_REWARD_DESCRIPTION,
     DEFAULT_REWARD_ICON,
@@ -62,6 +71,13 @@ _ADD = "__add__"
 _DONE = "__done__"
 
 
+def _unit(value: Any) -> str:
+    unit = str(value)
+    if unit in ("seconds", "minutes", "hours", "days"):
+        return unit
+    return "days"
+
+
 def _whole(value: Any) -> int:
     return int(float(value))
 
@@ -73,6 +89,31 @@ def _number(min_value: int, max_value: int) -> NumberSelector:
             max=max_value,
             step=1,
             mode=NumberSelectorMode.BOX,
+        )
+    )
+
+
+def _decimal(min_value: float, max_value: float, step: float) -> NumberSelector:
+    return NumberSelector(
+        NumberSelectorConfig(
+            min=min_value,
+            max=max_value,
+            step=step,
+            mode=NumberSelectorMode.BOX,
+        )
+    )
+
+
+def _time_unit() -> SelectSelector:
+    return SelectSelector(
+        SelectSelectorConfig(
+            options=[
+                {"value": "seconds", "label": "Seconds"},
+                {"value": "minutes", "label": "Minutes"},
+                {"value": "hours", "label": "Hours"},
+                {"value": "days", "label": "Days"},
+            ],
+            mode=SelectSelectorMode.DROPDOWN,
         )
     )
 
@@ -94,6 +135,9 @@ def _settings_schema(defaults: dict[str, Any]) -> vol.Schema:
         CONF_TIER2_COUNT,
         _present(defaults, CONF_STARS_PER_POUND, DEFAULT_TIER2_COUNT),
     )
+    rate = _present(defaults, CONF_INTEREST_RATE, None)
+    if rate is None:
+        rate = _present(defaults, CONF_DAILY_INTEREST_PERCENT, DEFAULT_INTEREST_RATE)
     return vol.Schema(
         {
             vol.Required(CONF_NAME, default=_present(defaults, CONF_NAME, "")): TextSelector(),
@@ -123,12 +167,31 @@ def _settings_schema(defaults: dict[str, Any]) -> vol.Schema:
                 CONF_CURRENCY_SYMBOL,
                 default=_present(defaults, CONF_CURRENCY_SYMBOL, DEFAULT_CURRENCY_SYMBOL),
             ): TextSelector(),
+            vol.Required(CONF_INTEREST_RATE, default=rate): _decimal(0, 100, 0.01),
             vol.Required(
-                CONF_DAILY_INTEREST_PERCENT,
+                CONF_INTEREST_EVERY_VALUE,
                 default=_present(
-                    defaults, CONF_DAILY_INTEREST_PERCENT, DEFAULT_DAILY_INTEREST_PERCENT
+                    defaults, CONF_INTEREST_EVERY_VALUE, DEFAULT_INTEREST_EVERY_VALUE
                 ),
-            ): _number(0, 20),
+            ): _number(1, 100000),
+            vol.Required(
+                CONF_INTEREST_EVERY_UNIT,
+                default=_present(
+                    defaults, CONF_INTEREST_EVERY_UNIT, DEFAULT_INTEREST_EVERY_UNIT
+                ),
+            ): _time_unit(),
+            vol.Required(
+                CONF_INTEREST_CALC_VALUE,
+                default=_present(
+                    defaults, CONF_INTEREST_CALC_VALUE, DEFAULT_INTEREST_CALC_VALUE
+                ),
+            ): _number(1, 100000),
+            vol.Required(
+                CONF_INTEREST_CALC_UNIT,
+                default=_present(
+                    defaults, CONF_INTEREST_CALC_UNIT, DEFAULT_INTEREST_CALC_UNIT
+                ),
+            ): _time_unit(),
         }
     )
 
@@ -161,7 +224,12 @@ def _clean_settings(user_input: dict[str, Any]) -> dict[str, Any]:
         CONF_TIER2_COUNT: tier2_count,
         CONF_UNITS_EARNED: _whole(user_input[CONF_UNITS_EARNED]),
         CONF_CURRENCY_SYMBOL: str(user_input[CONF_CURRENCY_SYMBOL]).strip(),
-        CONF_DAILY_INTEREST_PERCENT: _whole(user_input[CONF_DAILY_INTEREST_PERCENT]),
+        CONF_INTEREST_RATE: round(float(user_input[CONF_INTEREST_RATE]), 2),
+        CONF_INTEREST_EVERY_VALUE: _whole(user_input[CONF_INTEREST_EVERY_VALUE]),
+        CONF_INTEREST_EVERY_UNIT: _unit(user_input[CONF_INTEREST_EVERY_UNIT]),
+        CONF_INTEREST_CALC_VALUE: _whole(user_input[CONF_INTEREST_CALC_VALUE]),
+        CONF_INTEREST_CALC_UNIT: _unit(user_input[CONF_INTEREST_CALC_UNIT]),
+        CONF_DAILY_INTEREST_PERCENT: int(round(float(user_input[CONF_INTEREST_RATE]))),
         CONF_TICKS_PER_STAR: tier1_count,
         CONF_STARS_PER_POUND: tier2_count,
     }

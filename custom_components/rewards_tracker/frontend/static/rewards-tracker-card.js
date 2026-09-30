@@ -16,6 +16,14 @@ function formatAmount(symbol, amount) {
   return `${mark}${amount}`;
 }
 
+function formatPoints(value) {
+  const rounded = Math.round(Number(value) * 100) / 100;
+  if (!Number.isFinite(rounded)) {
+    return "0";
+  }
+  return String(rounded);
+}
+
 function safeIcon(icon) {
   return /^[a-z0-9-]+:[a-z0-9-]+$/i.test(icon || "") ? icon : "mdi:cash";
 }
@@ -152,7 +160,7 @@ class RewardsTrackerCard extends HTMLElement {
       </div>
       ${this._tier(tier1Name, tier1Icon, ticks, tier1Count)}
       ${this._tier(tier2Name, tier2Icon, stars, tier2Count)}
-      ${this._meter("Interest", interest, 100, `${interest}/100 toward the next ${formatAmount(symbol, 1)}`)}
+      ${this._meter("Interest", interest, 100, `${formatPoints(interest)}/100 toward the next ${formatAmount(symbol, 1)}`)}
       <div class="actions">
         <button class="btn primary" data-action="award_tick">${escapeHtml(tier1Name)}</button>
         <button class="btn" data-action="deposit" ${balance < 1 ? "disabled" : ""}>Deposit ${escapeHtml(formatAmount(symbol, 1))}</button>

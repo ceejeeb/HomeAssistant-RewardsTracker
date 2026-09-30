@@ -13,6 +13,7 @@ from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 import voluptuous as vol
 
+from .calculator import progress_points
 from .const import CONF_REWARD_ID, DOMAIN
 from .tracker import ChildTracker
 
@@ -103,7 +104,7 @@ class RewardSensor(SensorEntity):
         self.async_write_ha_state()
 
     @property
-    def native_value(self) -> int:
+    def native_value(self) -> int | float:
         """Return the balance this sensor represents."""
         pot = self._tracker.pot
         return {
@@ -111,7 +112,7 @@ class RewardSensor(SensorEntity):
             "stars": pot.stars,
             "balance": pot.balance,
             "savings": pot.savings,
-            "interest_pence": pot.interest_pence,
+            "interest_pence": progress_points(pot.interest_nanos),
         }[self.entity_description.key]
 
     @property
@@ -119,9 +120,9 @@ class RewardSensor(SensorEntity):
         """Expose the whole pot so the card can bind to any of the sensors."""
         pot = self._tracker.pot
         rules = self._tracker.rules
-        last_paid = (
-            pot.interest_last_paid.isoformat() if pot.interest_last_paid else None
-        )
+        settings = self._tracker.settings
+        last = pot.interest_last_calculated
+        points = progress_points(pot.interest_nanos)
         return {
             "role": self.entity_description.key,
             "child_name": self._tracker.name,
@@ -129,7 +130,7 @@ class RewardSensor(SensorEntity):
             "stars": pot.stars,
             "balance": pot.balance,
             "savings": pot.savings,
-            "interest_pence": pot.interest_pence,
+            "interest_pence": points,
             "tier1_name": self._tracker.tier1_name,
             "tier1_icon": self._tracker.tier1_icon,
             "tier1_count": rules.ticks_per_star,
@@ -140,8 +141,13 @@ class RewardSensor(SensorEntity):
             "ticks_per_star": rules.ticks_per_star,
             "stars_per_pound": rules.stars_per_pound,
             "daily_interest_percent": rules.daily_interest_percent,
+            "interest_rate_percent": settings.get("interest_rate_percent"),
+            "interest_every_value": settings.get("interest_every_value"),
+            "interest_every_unit": settings.get("interest_every_unit"),
+            "interest_calc_value": settings.get("interest_calc_value"),
+            "interest_calc_unit": settings.get("interest_calc_unit"),
             "currency_symbol": self._tracker.currency,
-            "interest_last_paid": last_paid,
+            "interest_last_paid": last.isoformat() if last else None,
             "rewards": self._tracker.rewards,
         }
 

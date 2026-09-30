@@ -13,11 +13,14 @@ sys.path.insert(
 )
 
 from calculator import (  # noqa: E402
+    POINT,
     Pot,
     Rules,
+    apply_elapsed,
     apply_interest,
     award_tick,
     deposit,
+    progress_points,
     settle,
     spend,
     withdraw,
@@ -121,6 +124,23 @@ class RewardRulesTest(unittest.TestCase):
         self.assertEqual(marked.interest_last_paid, TODAY)
         resumed = apply_interest(marked, RULES, TODAY)
         self.assertEqual(resumed.interest_pence, 0)
+
+    def test_half_a_day_is_half_the_daily_interest(self) -> None:
+        updated = apply_elapsed(Pot(savings=10), RULES, 12 * 3600)
+        self.assertEqual(updated.savings, 10)
+        self.assertEqual(progress_points(updated.interest_nanos), 5)
+
+    def test_hourly_steps_add_up_to_one_full_day(self) -> None:
+        pot = Pot(savings=10)
+        for _ in range(24):
+            pot = apply_elapsed(pot, RULES, 3600)
+        self.assertEqual(pot.savings, 10)
+        self.assertEqual(pot.interest_nanos, 10 * POINT)
+
+    def test_a_unit_paid_midway_earns_on_the_rest_of_the_window(self) -> None:
+        updated = apply_elapsed(Pot(savings=100), RULES, 2 * 86400)
+        self.assertEqual(updated.savings, 102)
+        self.assertEqual(updated.interest_pence, 1)
 
 
 if __name__ == "__main__":

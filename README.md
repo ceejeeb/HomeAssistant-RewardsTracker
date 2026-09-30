@@ -10,7 +10,7 @@ When the second tier fills, it pays out and the count of that tier drops by its 
 
 Deposit moves 1 unit from spending money into savings. Withdraw moves 1 unit back. Neither press changes the interest bar. A part-built unit of interest can only come back out after it has been paid into savings as a whole unit.
 
-Savings earn the child's daily percent at 07:00 local time. At 1%, 10 units of savings earn 10 hundredths a day. When the hundredths reach 100, 1 unit is added to savings and the bar starts again. A unit paid as interest starts earning the next day. If Home Assistant was off, missed days are caught up on the next start, up to 31 days. The first time a child is added, today is marked as already paid, so interest starts the following morning.
+Savings earn the percent you set, over the period you set. A separate timer decides how often that interest is worked out. At 1% every 1 day, calculated every hour, each hour adds one twenty-fourth of that day's interest and the bar moves. At 1% every 1 day, 10 units of savings earn 10 hundredths a day. When the hundredths reach 100, 1 unit is added to savings and the bar starts again. A unit paid as interest starts earning on the next calculation. If Home Assistant was off, missed time is caught up on the next start, up to 31 days. The first time a child is added, the clock starts then, so nothing is paid for time before that.
 
 Spending uses the list you configure on that child. Each option has a description, a cost, and an icon. The press subtracts the cost from spending money when the balance covers it.
 
@@ -30,7 +30,7 @@ Home Assistant 2025.1 or newer is required.
 
 ## Add a child
 
-The first screen asks for the child's name, then a name, icon, and count for each tier, how much money a full second tier pays, the currency symbol, and the daily interest percent. The defaults are Ticks, a check icon, 5, then Stars, a star icon, 3, paying £1 at 1% a day.
+The first screen asks for the child's name, then a name, icon, and count for each tier, how much money a full second tier pays, the currency symbol, and the interest. Interest is a percent over a period, such as 1% every 1 day, plus a separate calculation interval, such as every hour. The defaults are Ticks, a check icon, 5, then Stars, a star icon, 3, paying £1 at 1% every 1 day, calculated every day.
 
 The next screen is the spend list. Add a way to spend, for example Buy Book at 3 with the icon `mdi:book-open-variant`, then finish. You can add more later. `mdi` icons work without anything else installed.
 
@@ -51,7 +51,7 @@ If the dashboard is in YAML mode, add the resource yourself:
 
 ```yaml
 resources:
-  - url: /rewards_tracker/rewards-tracker-card.js?v=0.1.2
+  - url: /rewards_tracker/rewards-tracker-card.js?v=0.1.3
     type: module
 ```
 
@@ -59,7 +59,7 @@ resources:
 
 The card cannot type a new balance. Open the integration, choose the child, and press Configure.
 
-Rules and currency changes the thresholds, the interest percent, and the symbol. Ways to spend adds, edits, or removes rewards. Correct balances sets ticks, stars, spending money, savings, and the interest bar. Saving that screen converts any ticks or stars that are already past the threshold, and turns every 100 interest points into 1 unit of savings.
+Rules and currency changes the thresholds, the interest percent, how often that percent applies, how often it is calculated, and the symbol. Ways to spend adds, edits, or removes rewards. Correct balances sets ticks, stars, spending money, savings, and the interest bar. Saving that screen converts any ticks or stars that are already past the threshold, and turns every 100 interest points into 1 unit of savings.
 
 ## Services
 

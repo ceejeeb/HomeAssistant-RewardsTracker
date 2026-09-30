@@ -3,7 +3,7 @@
     "step": {
       "user": {
         "title": "Add a child",
-        "description": "Name the two tiers and choose an icon for each. A full second tier pays out spending money. Savings earn interest once a day at 07:00.",
+        "description": "Name the two tiers and choose an icon for each. A full second tier pays out spending money. Savings earn a percent over a period you choose, and a separate timer decides how often that interest is worked out.",
         "data": {
           "name": "Name",
           "tier1_name": "First tier name",
@@ -13,13 +13,19 @@
           "tier2_icon": "Second tier icon",
           "tier2_count": "How many pay out",
           "units_earned": "Money earned each payout",
-          "daily_interest_percent": "Savings interest per day (%)",
+          "interest_rate_percent": "Interest percent",
+          "interest_every_value": "Interest every",
+          "interest_every_unit": "Interest period",
+          "interest_calc_value": "Calculate every",
+          "interest_calc_unit": "Calculation period",
           "currency_symbol": "Currency symbol"
         },
         "data_description": {
           "tier1_count": "For example, 5 ticks become 1 star.",
           "tier2_count": "For example, 3 stars pay out the money amount below.",
-          "units_earned": "How many units of the currency are added when the second tier fills."
+          "units_earned": "How many units of the currency are added when the second tier fills.",
+          "interest_rate_percent": "Percent of whole savings added over the interest period. 1 every 1 day is 1% a day.",
+          "interest_calc_value": "How often that interest is worked out. 1 hour with a 1 day period adds one twenty-fourth each hour."
         }
       },
       "rewards_menu": {
@@ -70,13 +76,19 @@
           "tier2_icon": "Second tier icon",
           "tier2_count": "How many pay out",
           "units_earned": "Money earned each payout",
-          "daily_interest_percent": "Savings interest per day (%)",
+          "interest_rate_percent": "Interest percent",
+          "interest_every_value": "Interest every",
+          "interest_every_unit": "Interest period",
+          "interest_calc_value": "Calculate every",
+          "interest_calc_unit": "Calculation period",
           "currency_symbol": "Currency symbol"
         },
         "data_description": {
           "tier1_count": "Counts already at or above this number convert the next time one is awarded, or when you correct balances.",
           "tier2_count": "The second tier converts the same way and pays the money amount below.",
-          "units_earned": "How many units of the currency are added when the second tier fills."
+          "units_earned": "How many units of the currency are added when the second tier fills.",
+          "interest_rate_percent": "Percent of whole savings added over the interest period. 1 every 1 day is 1% a day.",
+          "interest_calc_value": "How often that interest is worked out. 1 hour with a 1 day period adds one twenty-fourth each hour."
         }
       },
       "rewards": {
