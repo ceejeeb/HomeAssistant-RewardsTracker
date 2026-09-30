@@ -19,6 +19,7 @@ class Rules:
     ticks_per_star: int
     stars_per_pound: int
     daily_interest_percent: int
+    units_earned: int = 1
 
 
 @dataclass(frozen=True)
@@ -51,9 +52,10 @@ def settle(pot: Pot, rules: Rules) -> Pot:
     while rules.ticks_per_star > 0 and ticks >= rules.ticks_per_star:
         ticks -= rules.ticks_per_star
         stars += 1
+    payout = max(1, rules.units_earned)
     while rules.stars_per_pound > 0 and stars >= rules.stars_per_pound:
         stars -= rules.stars_per_pound
-        balance += 1
+        balance += payout
 
     return Pot(
         ticks=ticks,

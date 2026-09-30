@@ -3,13 +3,23 @@
     "step": {
       "user": {
         "title": "Add a child",
-        "description": "Ticks build into stars, and stars build into spending money. Savings earn interest once a day at 07:00.",
+        "description": "Name the two tiers and choose an icon for each. A full second tier pays out spending money. Savings earn interest once a day at 07:00.",
         "data": {
           "name": "Name",
-          "ticks_per_star": "Ticks for one star",
-          "stars_per_pound": "Stars for one unit of money",
+          "tier1_name": "First tier name",
+          "tier1_icon": "First tier icon",
+          "tier1_count": "How many make one of the second tier",
+          "tier2_name": "Second tier name",
+          "tier2_icon": "Second tier icon",
+          "tier2_count": "How many pay out",
+          "units_earned": "Money earned each payout",
           "daily_interest_percent": "Savings interest per day (%)",
           "currency_symbol": "Currency symbol"
+        },
+        "data_description": {
+          "tier1_count": "For example, 5 ticks become 1 star.",
+          "tier2_count": "For example, 3 stars pay out the money amount below.",
+          "units_earned": "How many units of the currency are added when the second tier fills."
         }
       },
       "rewards_menu": {
@@ -32,6 +42,8 @@
     "error": {
       "name_required": "Enter a name.",
       "name_used": "A child with that name already exists.",
+      "tier_name_required": "Enter a name for this tier.",
+      "tier_name_too_long": "Use 24 characters or fewer.",
       "currency_too_long": "Use 1 to 4 characters.",
       "description_required": "Enter a description.",
       "icon_invalid": "Choose an icon such as mdi:book-open-variant."
@@ -51,14 +63,20 @@
         "title": "Rules and currency",
         "data": {
           "name": "Name",
-          "ticks_per_star": "Ticks for one star",
-          "stars_per_pound": "Stars for one unit of money",
+          "tier1_name": "First tier name",
+          "tier1_icon": "First tier icon",
+          "tier1_count": "How many make one of the second tier",
+          "tier2_name": "Second tier name",
+          "tier2_icon": "Second tier icon",
+          "tier2_count": "How many pay out",
+          "units_earned": "Money earned each payout",
           "daily_interest_percent": "Savings interest per day (%)",
           "currency_symbol": "Currency symbol"
         },
         "data_description": {
-          "ticks_per_star": "Existing ticks at or above this number convert when you next award a tick, or when you correct balances.",
-          "stars_per_pound": "Existing stars at or above this number convert the same way."
+          "tier1_count": "Counts already at or above this number convert the next time one is awarded, or when you correct balances.",
+          "tier2_count": "The second tier converts the same way and pays the money amount below.",
+          "units_earned": "How many units of the currency are added when the second tier fills."
         }
       },
       "rewards": {
@@ -87,10 +105,10 @@
       },
       "balances": {
         "title": "Correct balances",
-        "description": "Ticks or stars already past the threshold are converted when you save. Every 100 interest points become 1 unit of savings.",
+        "description": "Counts already past the threshold are converted when you save. Every 100 interest points become 1 unit of savings.",
         "data": {
-          "ticks": "Ticks",
-          "stars": "Stars",
+          "ticks": "First tier",
+          "stars": "Second tier",
           "balance": "Spending money",
           "savings": "Savings",
           "interest_pence": "Interest toward the next unit (0 to 99)"
@@ -100,6 +118,8 @@
     "error": {
       "name_required": "Enter a name.",
       "name_used": "A child with that name already exists.",
+      "tier_name_required": "Enter a name for this tier.",
+      "tier_name_too_long": "Use 24 characters or fewer.",
       "currency_too_long": "Use 1 to 4 characters.",
       "description_required": "Enter a description.",
       "icon_invalid": "Choose an icon such as mdi:book-open-variant.",

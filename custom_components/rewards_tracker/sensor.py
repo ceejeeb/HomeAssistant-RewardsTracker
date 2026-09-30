@@ -130,6 +130,13 @@ class RewardSensor(SensorEntity):
             "balance": pot.balance,
             "savings": pot.savings,
             "interest_pence": pot.interest_pence,
+            "tier1_name": self._tracker.tier1_name,
+            "tier1_icon": self._tracker.tier1_icon,
+            "tier1_count": rules.ticks_per_star,
+            "tier2_name": self._tracker.tier2_name,
+            "tier2_icon": self._tracker.tier2_icon,
+            "tier2_count": rules.stars_per_pound,
+            "units_earned": rules.units_earned,
             "ticks_per_star": rules.ticks_per_star,
             "stars_per_pound": rules.stars_per_pound,
             "daily_interest_percent": rules.daily_interest_percent,
@@ -137,6 +144,26 @@ class RewardSensor(SensorEntity):
             "interest_last_paid": last_paid,
             "rewards": self._tracker.rewards,
         }
+
+    @property
+    def name(self) -> str:
+        """Use the names chosen for the two tiers."""
+        key = self.entity_description.key
+        if key == "ticks":
+            return self._tracker.tier1_name
+        if key == "stars":
+            return self._tracker.tier2_name
+        return str(self.entity_description.name)
+
+    @property
+    def icon(self) -> str | None:
+        """Use the icons chosen for the two tiers."""
+        key = self.entity_description.key
+        if key == "ticks":
+            return self._tracker.tier1_icon
+        if key == "stars":
+            return self._tracker.tier2_icon
+        return self.entity_description.icon
 
     async def async_award_tick(self) -> None:
         """Service: award one tick."""

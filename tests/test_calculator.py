@@ -34,6 +34,13 @@ class RewardRulesTest(unittest.TestCase):
         self.assertEqual(updated.ticks, 0)
         self.assertEqual(updated.stars, 1)
 
+    def test_full_second_tier_pays_the_chosen_units(self) -> None:
+        rules = Rules(5, 3, 1, units_earned=2)
+        updated = award_tick(Pot(ticks=4, stars=2), rules)
+        self.assertEqual(updated.ticks, 0)
+        self.assertEqual(updated.stars, 0)
+        self.assertEqual(updated.balance, 2)
+
     def test_third_star_becomes_money_on_the_same_tick(self) -> None:
         pot = Pot(ticks=4, stars=2)
         updated = award_tick(pot, RULES)

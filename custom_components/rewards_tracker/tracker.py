@@ -35,6 +35,22 @@ from .const import (
     CONF_STARS_PER_POUND,
     CONF_TICKS,
     CONF_TICKS_PER_STAR,
+    CONF_TIER1_COUNT,
+    CONF_TIER1_ICON,
+    CONF_TIER1_NAME,
+    CONF_TIER2_COUNT,
+    CONF_TIER2_ICON,
+    CONF_TIER2_NAME,
+    CONF_UNITS_EARNED,
+    DEFAULT_CURRENCY_SYMBOL,
+    DEFAULT_DAILY_INTEREST_PERCENT,
+    DEFAULT_TIER1_COUNT,
+    DEFAULT_TIER1_ICON,
+    DEFAULT_TIER1_NAME,
+    DEFAULT_TIER2_COUNT,
+    DEFAULT_TIER2_ICON,
+    DEFAULT_TIER2_NAME,
+    DEFAULT_UNITS_EARNED,
     DOMAIN,
     INTEREST_HOUR,
     INTEREST_MINUTE,
@@ -47,7 +63,65 @@ Listener = Callable[[], None]
 
 def settings_from_entry(entry) -> dict[str, Any]:
     """Return the child's rules, preferring options over the original data."""
-    return dict(entry.options or entry.data)
+    return normalize_settings(dict(entry.options or entry.data))
+
+
+def normalize_settings(raw: dict[str, Any]) -> dict[str, Any]:
+    """Fill tier names and icons, including children saved before those fields existed."""
+    tier1_count = _setting_count(
+        raw.get(CONF_TIER1_COUNT, raw.get(CONF_TICKS_PER_STAR)),
+        DEFAULT_TIER1_COUNT,
+        minimum=1,
+    )
+    tier2_count = _setting_count(
+        raw.get(CONF_TIER2_COUNT, raw.get(CONF_STARS_PER_POUND)),
+        DEFAULT_TIER2_COUNT,
+        minimum=1,
+    )
+    units_earned = _setting_count(
+        raw.get(CONF_UNITS_EARNED), DEFAULT_UNITS_EARNED, minimum=1
+    )
+    interest = _setting_count(
+        raw.get(CONF_DAILY_INTEREST_PERCENT),
+        DEFAULT_DAILY_INTEREST_PERCENT,
+        minimum=0,
+    )
+    symbol = str(raw.get(CONF_CURRENCY_SYMBOL) or DEFAULT_CURRENCY_SYMBOL).strip()
+    return {
+        CONF_NAME: str(raw.get(CONF_NAME) or "").strip(),
+        CONF_TIER1_NAME: _setting_label(raw.get(CONF_TIER1_NAME), DEFAULT_TIER1_NAME),
+        CONF_TIER1_ICON: _setting_icon(raw.get(CONF_TIER1_ICON), DEFAULT_TIER1_ICON),
+        CONF_TIER1_COUNT: tier1_count,
+        CONF_TIER2_NAME: _setting_label(raw.get(CONF_TIER2_NAME), DEFAULT_TIER2_NAME),
+        CONF_TIER2_ICON: _setting_icon(raw.get(CONF_TIER2_ICON), DEFAULT_TIER2_ICON),
+        CONF_TIER2_COUNT: tier2_count,
+        CONF_UNITS_EARNED: units_earned,
+        CONF_CURRENCY_SYMBOL: symbol or DEFAULT_CURRENCY_SYMBOL,
+        CONF_DAILY_INTEREST_PERCENT: interest,
+        CONF_REWARDS: list(raw.get(CONF_REWARDS) or []),
+        CONF_TICKS_PER_STAR: tier1_count,
+        CONF_STARS_PER_POUND: tier2_count,
+    }
+
+
+def _setting_count(value: Any, default: int, minimum: int) -> int:
+    try:
+        number = int(float(value))
+    except (TypeError, ValueError):
+        return default
+    return number if number >= minimum else default
+
+
+def _setting_label(value: Any, default: str) -> str:
+    text = str(value or "").strip()
+    return text or default
+
+
+def _setting_icon(value: Any, default: str) -> str:
+    icon = str(value or "").strip()
+    if ":" not in icon or " " in icon:
+        return default
+    return icon
 
 
 class ChildTracker:
@@ -86,13 +160,34 @@ class ChildTracker:
         return [dict(reward) for reward in self.settings.get(CONF_REWARDS, [])]
 
     @property
+    def tier1_name(self) -> str:
+        """Return the name of the first tier."""
+        return str(self.settings[CONF_TIER1_NAME])
+
+    @property
+    def tier1_icon(self) -> str:
+        """Return the icon of the first tier."""
+        return str(self.settings[CONF_TIER1_ICON])
+
+    @property
+    def tier2_name(self) -> str:
+        """Return the name of the second tier."""
+        return str(self.settings[CONF_TIER2_NAME])
+
+    @property
+    def tier2_icon(self) -> str:
+        """Return the icon of the second tier."""
+        return str(self.settings[CONF_TIER2_ICON])
+
+    @property
     def rules(self) -> Rules:
         """Return the conversion and interest rules."""
         settings = self.settings
         return Rules(
-            ticks_per_star=int(settings[CONF_TICKS_PER_STAR]),
-            stars_per_pound=int(settings[CONF_STARS_PER_POUND]),
+            ticks_per_star=int(settings[CONF_TIER1_COUNT]),
+            stars_per_pound=int(settings[CONF_TIER2_COUNT]),
             daily_interest_percent=int(settings[CONF_DAILY_INTEREST_PERCENT]),
+            units_earned=int(settings[CONF_UNITS_EARNED]),
         )
 
     def find_reward(self, reward_id: str) -> dict[str, Any] | None:

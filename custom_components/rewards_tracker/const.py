@@ -5,9 +5,16 @@ from __future__ import annotations
 from typing import Final
 
 DOMAIN: Final = "rewards_tracker"
-VERSION: Final = "0.1.0"
+VERSION: Final = "0.2.0"
 
 CONF_NAME: Final = "name"
+CONF_TIER1_NAME: Final = "tier1_name"
+CONF_TIER1_ICON: Final = "tier1_icon"
+CONF_TIER1_COUNT: Final = "tier1_count"
+CONF_TIER2_NAME: Final = "tier2_name"
+CONF_TIER2_ICON: Final = "tier2_icon"
+CONF_TIER2_COUNT: Final = "tier2_count"
+CONF_UNITS_EARNED: Final = "units_earned"
 CONF_TICKS_PER_STAR: Final = "ticks_per_star"
 CONF_STARS_PER_POUND: Final = "stars_per_pound"
 CONF_DAILY_INTEREST_PERCENT: Final = "daily_interest_percent"
@@ -27,8 +34,15 @@ CONF_SAVINGS: Final = "savings"
 CONF_INTEREST_PENCE: Final = "interest_pence"
 CONF_INTEREST_LAST_PAID: Final = "interest_last_paid"
 
-DEFAULT_TICKS_PER_STAR: Final = 5
-DEFAULT_STARS_PER_POUND: Final = 3
+DEFAULT_TIER1_NAME: Final = "Ticks"
+DEFAULT_TIER1_ICON: Final = "mdi:check"
+DEFAULT_TIER1_COUNT: Final = 5
+DEFAULT_TIER2_NAME: Final = "Stars"
+DEFAULT_TIER2_ICON: Final = "mdi:star"
+DEFAULT_TIER2_COUNT: Final = 3
+DEFAULT_UNITS_EARNED: Final = 1
+DEFAULT_TICKS_PER_STAR: Final = DEFAULT_TIER1_COUNT
+DEFAULT_STARS_PER_POUND: Final = DEFAULT_TIER2_COUNT
 DEFAULT_DAILY_INTEREST_PERCENT: Final = 1
 DEFAULT_CURRENCY_SYMBOL: Final = "£"
 DEFAULT_REWARD_DESCRIPTION: Final = "Buy Book"

@@ -4,9 +4,9 @@ A Home Assistant integration for a child's reward money. Add one entry per child
 
 ## How the numbers work
 
-A tick is one good thing. When the ticks reach that child's threshold, they become one star and the tick count goes back by that many. The default is 5 ticks to a star.
+A full first tier becomes one of the second tier. A full second tier adds the amount of spending money you chose. The defaults are 5 of the first tier, named Ticks with a check icon, then 3 of the second tier, named Stars with a star icon, paying 1 unit of money.
 
-When the stars reach that child's threshold, they become 1 unit of spending money. The default is 3 stars to 1 unit. Both conversions happen on the same tick, so the star that completes the set becomes money immediately.
+When the second tier fills, it pays out and the count of that tier drops by its threshold. Both conversions happen on the same award, so the one that completes the set becomes money immediately.
 
 Deposit moves 1 unit from spending money into savings. Withdraw moves 1 unit back. Neither press changes the interest bar. A part-built unit of interest can only come back out after it has been paid into savings as a whole unit.
 
@@ -22,8 +22,6 @@ Spending uses the list you configure on that child. Each option has a descriptio
 4. Download Rewards Tracker and restart Home Assistant.
 5. Go to Settings, Devices and services, Add integration, and choose Rewards Tracker.
 
-Before you publish the repository, replace `documentation` in `custom_components/rewards_tracker/manifest.json` with your repository URL. It is a placeholder at the moment.
-
 ## Install by copying the folder
 
 Copy `custom_components/rewards_tracker` into your Home Assistant config folder so the path is `config/custom_components/rewards_tracker`. Restart Home Assistant, then add the integration as above.
@@ -32,7 +30,7 @@ Home Assistant 2025.1 or newer is required.
 
 ## Add a child
 
-The first screen asks for the name, ticks per star, stars per unit of money, daily interest percent, and a currency symbol. The defaults are 5, 3, 1%, and £.
+The first screen asks for the child's name, then a name, icon, and count for each tier, how much money a full second tier pays, the currency symbol, and the daily interest percent. The defaults are Ticks, a check icon, 5, then Stars, a star icon, 3, paying £1 at 1% a day.
 
 The next screen is the spend list. Add a way to spend, for example Buy Book at 3 with the icon `mdi:book-open-variant`, then finish. You can add more later. `mdi` icons work without anything else installed.
 
@@ -53,7 +51,7 @@ If the dashboard is in YAML mode, add the resource yourself:
 
 ```yaml
 resources:
-  - url: /rewards_tracker/rewards-tracker-card.js?v=0.1.0
+  - url: /rewards_tracker/rewards-tracker-card.js?v=0.2.0
     type: module
 ```
 

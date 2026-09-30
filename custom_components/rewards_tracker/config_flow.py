@@ -35,13 +35,25 @@ from .const import (
     CONF_STARS_PER_POUND,
     CONF_TICKS,
     CONF_TICKS_PER_STAR,
+    CONF_TIER1_COUNT,
+    CONF_TIER1_ICON,
+    CONF_TIER1_NAME,
+    CONF_TIER2_COUNT,
+    CONF_TIER2_ICON,
+    CONF_TIER2_NAME,
+    CONF_UNITS_EARNED,
     DEFAULT_CURRENCY_SYMBOL,
     DEFAULT_DAILY_INTEREST_PERCENT,
     DEFAULT_REWARD_COST,
     DEFAULT_REWARD_DESCRIPTION,
     DEFAULT_REWARD_ICON,
-    DEFAULT_STARS_PER_POUND,
-    DEFAULT_TICKS_PER_STAR,
+    DEFAULT_TIER1_COUNT,
+    DEFAULT_TIER1_ICON,
+    DEFAULT_TIER1_NAME,
+    DEFAULT_TIER2_COUNT,
+    DEFAULT_TIER2_ICON,
+    DEFAULT_TIER2_NAME,
+    DEFAULT_UNITS_EARNED,
     DOMAIN,
 )
 from .tracker import async_get_tracker
@@ -65,30 +77,58 @@ def _number(min_value: int, max_value: int) -> NumberSelector:
     )
 
 
+def _present(defaults: dict[str, Any], key: str, fallback: Any) -> Any:
+    if key in defaults:
+        return defaults[key]
+    return fallback
+
+
 def _settings_schema(defaults: dict[str, Any]) -> vol.Schema:
+    tier1_count = _present(
+        defaults,
+        CONF_TIER1_COUNT,
+        _present(defaults, CONF_TICKS_PER_STAR, DEFAULT_TIER1_COUNT),
+    )
+    tier2_count = _present(
+        defaults,
+        CONF_TIER2_COUNT,
+        _present(defaults, CONF_STARS_PER_POUND, DEFAULT_TIER2_COUNT),
+    )
     return vol.Schema(
         {
+            vol.Required(CONF_NAME, default=_present(defaults, CONF_NAME, "")): TextSelector(),
             vol.Required(
-                CONF_NAME, default=defaults.get(CONF_NAME, "")
+                CONF_TIER1_NAME,
+                default=_present(defaults, CONF_TIER1_NAME, DEFAULT_TIER1_NAME),
             ): TextSelector(),
             vol.Required(
-                CONF_TICKS_PER_STAR,
-                default=defaults.get(CONF_TICKS_PER_STAR, DEFAULT_TICKS_PER_STAR),
-            ): _number(1, 50),
+                CONF_TIER1_ICON,
+                default=_present(defaults, CONF_TIER1_ICON, DEFAULT_TIER1_ICON),
+            ): IconSelector(),
+            vol.Required(CONF_TIER1_COUNT, default=tier1_count): _number(1, 24),
             vol.Required(
-                CONF_STARS_PER_POUND,
-                default=defaults.get(CONF_STARS_PER_POUND, DEFAULT_STARS_PER_POUND),
-            ): _number(1, 50),
+                CONF_TIER2_NAME,
+                default=_present(defaults, CONF_TIER2_NAME, DEFAULT_TIER2_NAME),
+            ): TextSelector(),
             vol.Required(
-                CONF_DAILY_INTEREST_PERCENT,
-                default=defaults.get(
-                    CONF_DAILY_INTEREST_PERCENT, DEFAULT_DAILY_INTEREST_PERCENT
-                ),
-            ): _number(0, 20),
+                CONF_TIER2_ICON,
+                default=_present(defaults, CONF_TIER2_ICON, DEFAULT_TIER2_ICON),
+            ): IconSelector(),
+            vol.Required(CONF_TIER2_COUNT, default=tier2_count): _number(1, 24),
+            vol.Required(
+                CONF_UNITS_EARNED,
+                default=_present(defaults, CONF_UNITS_EARNED, DEFAULT_UNITS_EARNED),
+            ): _number(1, 100),
             vol.Required(
                 CONF_CURRENCY_SYMBOL,
-                default=defaults.get(CONF_CURRENCY_SYMBOL, DEFAULT_CURRENCY_SYMBOL),
+                default=_present(defaults, CONF_CURRENCY_SYMBOL, DEFAULT_CURRENCY_SYMBOL),
             ): TextSelector(),
+            vol.Required(
+                CONF_DAILY_INTEREST_PERCENT,
+                default=_present(
+                    defaults, CONF_DAILY_INTEREST_PERCENT, DEFAULT_DAILY_INTEREST_PERCENT
+                ),
+            ): _number(0, 20),
         }
     )
 
@@ -109,19 +149,44 @@ def _reward_schema(defaults: dict[str, Any], *, include_delete: bool) -> vol.Sch
 
 
 def _clean_settings(user_input: dict[str, Any]) -> dict[str, Any]:
+    tier1_count = _whole(user_input[CONF_TIER1_COUNT])
+    tier2_count = _whole(user_input[CONF_TIER2_COUNT])
     return {
         CONF_NAME: str(user_input[CONF_NAME]).strip(),
-        CONF_TICKS_PER_STAR: _whole(user_input[CONF_TICKS_PER_STAR]),
-        CONF_STARS_PER_POUND: _whole(user_input[CONF_STARS_PER_POUND]),
-        CONF_DAILY_INTEREST_PERCENT: _whole(user_input[CONF_DAILY_INTEREST_PERCENT]),
+        CONF_TIER1_NAME: str(user_input[CONF_TIER1_NAME]).strip(),
+        CONF_TIER1_ICON: str(user_input[CONF_TIER1_ICON]).strip(),
+        CONF_TIER1_COUNT: tier1_count,
+        CONF_TIER2_NAME: str(user_input[CONF_TIER2_NAME]).strip(),
+        CONF_TIER2_ICON: str(user_input[CONF_TIER2_ICON]).strip(),
+        CONF_TIER2_COUNT: tier2_count,
+        CONF_UNITS_EARNED: _whole(user_input[CONF_UNITS_EARNED]),
         CONF_CURRENCY_SYMBOL: str(user_input[CONF_CURRENCY_SYMBOL]).strip(),
+        CONF_DAILY_INTEREST_PERCENT: _whole(user_input[CONF_DAILY_INTEREST_PERCENT]),
+        CONF_TICKS_PER_STAR: tier1_count,
+        CONF_STARS_PER_POUND: tier2_count,
     }
+
+
+def _icon_ok(icon: str) -> bool:
+    return ":" in icon and " " not in icon
 
 
 def _validate_settings(settings: dict[str, Any]) -> dict[str, str]:
     errors: dict[str, str] = {}
     if not settings[CONF_NAME]:
         errors[CONF_NAME] = "name_required"
+    if not settings[CONF_TIER1_NAME]:
+        errors[CONF_TIER1_NAME] = "tier_name_required"
+    elif len(settings[CONF_TIER1_NAME]) > 24:
+        errors[CONF_TIER1_NAME] = "tier_name_too_long"
+    if not settings[CONF_TIER2_NAME]:
+        errors[CONF_TIER2_NAME] = "tier_name_required"
+    elif len(settings[CONF_TIER2_NAME]) > 24:
+        errors[CONF_TIER2_NAME] = "tier_name_too_long"
+    if not _icon_ok(settings[CONF_TIER1_ICON]):
+        errors[CONF_TIER1_ICON] = "icon_invalid"
+    if not _icon_ok(settings[CONF_TIER2_ICON]):
+        errors[CONF_TIER2_ICON] = "icon_invalid"
     symbol = settings[CONF_CURRENCY_SYMBOL]
     if not symbol or len(symbol) > 4:
         errors[CONF_CURRENCY_SYMBOL] = "currency_too_long"

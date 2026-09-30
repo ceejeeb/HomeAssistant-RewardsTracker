@@ -111,8 +111,12 @@ class RewardsTrackerCard extends HTMLElement {
     const ticks = Number(attr.ticks);
     const stars = Number(attr.stars);
     const interest = Number(attr.interest_pence);
-    const ticksPerStar = Number(attr.ticks_per_star) || 1;
-    const starsPerPound = Number(attr.stars_per_pound) || 1;
+    const tier1Name = attr.tier1_name || "Ticks";
+    const tier2Name = attr.tier2_name || "Stars";
+    const tier1Icon = attr.tier1_icon || "mdi:check";
+    const tier2Icon = attr.tier2_icon || "mdi:star";
+    const tier1Count = Number(attr.tier1_count || attr.ticks_per_star) || 1;
+    const tier2Count = Number(attr.tier2_count || attr.stars_per_pound) || 1;
     const rewards = Array.isArray(attr.rewards) ? attr.rewards : [];
     const error = this._error
       ? `<p class="error">${escapeHtml(this._error)}</p>`
@@ -146,11 +150,11 @@ class RewardsTrackerCard extends HTMLElement {
           <div class="value">${escapeHtml(formatAmount(symbol, savings))}</div>
         </div>
       </div>
-      ${this._meter("Ticks", ticks, ticksPerStar, `${ticks}/${ticksPerStar}`)}
-      ${this._meter("Stars", stars, starsPerPound, `${stars}/${starsPerPound}`)}
+      ${this._tier(tier1Name, tier1Icon, ticks, tier1Count)}
+      ${this._tier(tier2Name, tier2Icon, stars, tier2Count)}
       ${this._meter("Interest", interest, 100, `${interest}/100 toward the next ${formatAmount(symbol, 1)}`)}
       <div class="actions">
-        <button class="btn primary" data-action="award_tick">Tick</button>
+        <button class="btn primary" data-action="award_tick">${escapeHtml(tier1Name)}</button>
         <button class="btn" data-action="deposit" ${balance < 1 ? "disabled" : ""}>Deposit ${escapeHtml(formatAmount(symbol, 1))}</button>
         <button class="btn" data-action="withdraw" ${savings < 1 ? "disabled" : ""}>Withdraw ${escapeHtml(formatAmount(symbol, 1))}</button>
       </div>
@@ -158,6 +162,30 @@ class RewardsTrackerCard extends HTMLElement {
       <div class="spend-title">Spend</div>
       <div class="spend-list">${spend}</div>
     `);
+  }
+
+  _tier(label, icon, earned, total) {
+    const safe = escapeHtml(safeIcon(icon));
+    const shown = Math.max(1, Math.min(Number(total) || 1, 24));
+    const have = Math.max(0, Math.min(Number(earned) || 0, shown));
+    const tokens = [];
+    for (let index = 0; index < shown; index += 1) {
+      const state = index < have ? "earned" : "waiting";
+      tokens.push(
+        `<span class="token ${state}"><ha-icon icon="${safe}"></ha-icon></span>`
+      );
+    }
+    return `
+      <div class="tier">
+        <div class="meter-row">
+          <span>${escapeHtml(label)}</span>
+          <span class="caption">${have}/${shown}</span>
+        </div>
+        <div class="icon-row" role="img" aria-label="${escapeHtml(label)} ${have} of ${shown}">
+          ${tokens.join("")}
+        </div>
+      </div>
+    `;
   }
 
   _meter(label, value, total, caption) {
@@ -201,14 +229,31 @@ class RewardsTrackerCard extends HTMLElement {
         }
         .label { font-size: 12px; }
         .value { font-size: 28px; font-weight: 500; line-height: 1.2; }
-        .meter { margin-bottom: 10px; }
+        .meter, .tier { margin-bottom: 12px; }
         .meter-row, .spend {
           display: flex;
           align-items: center;
           gap: 8px;
         }
-        .meter-row { justify-content: space-between; font-size: 13px; margin-bottom: 4px; }
+        .meter-row { justify-content: space-between; font-size: 13px; margin-bottom: 6px; }
         .caption { color: var(--secondary-text-color); }
+        .icon-row {
+          display: flex;
+          flex-wrap: wrap;
+          gap: 4px;
+        }
+        .token {
+          width: 32px;
+          height: 32px;
+          display: grid;
+          place-items: center;
+        }
+        .token ha-icon { --mdc-icon-size: 28px; }
+        .token.earned ha-icon { color: var(--primary-color); }
+        .token.waiting ha-icon {
+          color: var(--primary-text-color);
+          opacity: 0.22;
+        }
         .track {
           height: 8px;
           border-radius: 99px;
