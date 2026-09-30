@@ -3,9 +3,13 @@
   "name": "Rewards Tracker",
   "codeowners": [],
   "config_flow": true,
-  "dependencies": ["frontend", "http", "lovelace"],
+  "dependencies": [
+    "frontend",
+    "http",
+    "lovelace"
+  ],
   "documentation": "https://github.com/ceejeeb/HomeAssistant-RewardsTracker",
   "iot_class": "calculated",
   "requirements": [],
-  "version": "0.1.0"
+  "version": "0.1.1"
 }
