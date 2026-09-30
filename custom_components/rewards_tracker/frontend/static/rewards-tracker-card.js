@@ -59,7 +59,7 @@ class RewardsTrackerCard extends HTMLElement {
     }
   }
 
-    set hass(hass) {
+  set hass(hass) {
     this._hass = hass;
     const state = this.config?.entity ? hass.states[this.config.entity] : null;
     const personId = state?.attributes?.person || "";
@@ -78,7 +78,7 @@ class RewardsTrackerCard extends HTMLElement {
   }
 
   getCardSize() {
-    return 6;
+    return 10;
   }
 
   _state() {
@@ -114,9 +114,10 @@ class RewardsTrackerCard extends HTMLElement {
     const person = personId ? this._hass.states[personId] : null;
     const picture = person?.attributes?.entity_picture || "";
     const displayName = person?.attributes?.friendly_name || attr.child_name;
+    const initial = escapeHtml((displayName || "?").trim().charAt(0).toUpperCase() || "?");
     const avatar = picture
       ? `<img class="avatar" src="${escapeHtml(picture)}" alt="">`
-      : "";
+      : `<div class="avatar fallback" aria-hidden="true">${initial}</div>`;
     const symbol = attr.currency_symbol || "";
     const balance = Number(attr.balance);
     const savings = Number(attr.savings);
@@ -133,53 +134,73 @@ class RewardsTrackerCard extends HTMLElement {
     const error = this._error
       ? `<p class="error">${escapeHtml(this._error)}</p>`
       : "";
-
     const unit = formatAmount(symbol, 1);
-    const spend = rewards.length
-      ? rewards
-          .map((reward) => {
-            const cost = Number(reward.cost);
-            const blocked = balance < cost;
-            return `
-              <button class="spend" data-action="spend" data-reward-id="${escapeHtml(reward.id)}" ${blocked ? "disabled" : ""}>
-                <ha-icon icon="${escapeHtml(safeIcon(reward.icon))}"></ha-icon>
-                <span class="spend-name">${escapeHtml(reward.description)}</span>
-                <span class="spend-cost">${escapeHtml(formatAmount(symbol, cost))}</span>
-              </button>
-            `;
-          })
-          .join("")
-      : `<p class="hint">No ways to spend yet. Add them from Configure on the integration.</p>`;
+    const shop = rewards
+      .map((reward) => {
+        const cost = Number(reward.cost);
+        return this._buy({
+          action: "spend",
+          rewardId: reward.id,
+          icon: reward.icon,
+          name: reward.description,
+          price: formatAmount(symbol, cost),
+          disabled: balance < cost,
+        });
+      })
+      .join("");
 
     this.shadowRoot.innerHTML = this._shell(`
-      <div class="header">${avatar}<span>${escapeHtml(displayName)}</span></div>
+      <div class="hero">
+        ${avatar}
+        <div class="hero-copy">
+          <div class="hero-name">${escapeHtml(displayName)}</div>
+          <button class="award" data-action="award_tick">
+            <ha-icon icon="${escapeHtml(safeIcon(tier1Icon))}"></ha-icon>
+            <span>${escapeHtml(tier1Name)}</span>
+          </button>
+        </div>
+      </div>
       ${error}
-      ${this._tier(tier1Name, tier1Icon, ticks, tier1Count, true)}
-      ${this._tier(tier2Name, tier2Icon, stars, tier2Count, false)}
-      <div class="pot">
-        <div class="label">Money</div>
-        <div class="value">${escapeHtml(formatAmount(symbol, balance))}</div>
-      </div>
-      <div class="spend-list">${spend}</div>
-      <div class="pot savings">
-        <div class="savings-main">
-          <div class="label">Savings</div>
-          <div class="value">${escapeHtml(formatAmount(symbol, savings))}</div>
-        </div>
-        <div class="transfers">
-          <button class="icon-btn" data-action="deposit" aria-label="Deposit ${escapeHtml(unit)}" ${balance < 1 ? "disabled" : ""}>
-            <ha-icon icon="mdi:arrow-down-bold"></ha-icon>
-          </button>
-          <button class="icon-btn" data-action="withdraw" aria-label="Withdraw ${escapeHtml(unit)}" ${savings < 1 ? "disabled" : ""}>
-            <ha-icon icon="mdi:arrow-up-bold"></ha-icon>
-          </button>
+      ${this._icons(tier1Name, tier1Icon, ticks, tier1Count, "ticks")}
+      ${this._swoosh("to-stars")}
+      ${this._icons(tier2Name, tier2Icon, stars, tier2Count, "stars")}
+      ${this._swoosh("to-bank")}
+      <div class="bank">
+        <div class="roof" aria-hidden="true"></div>
+        <div class="vault">
+          <div class="columns" aria-hidden="true"><span></span><span></span><span></span></div>
+          <div class="vault-label">Bank</div>
+          <div class="vault-amount">${escapeHtml(formatAmount(symbol, balance))}</div>
         </div>
       </div>
-      ${this._meter("Interest", interest, 100)}
+      <div class="shop">
+        ${shop}
+        ${this._buy({
+          action: "deposit",
+          icon: "mdi:plus",
+          name: "Save",
+          price: `+${unit}`,
+          disabled: balance < 1,
+        })}
+        ${this._buy({
+          action: "withdraw",
+          icon: "mdi:minus",
+          name: "Take out",
+          price: `-${unit}`,
+          disabled: savings < 1,
+        })}
+      </div>
+      <div class="savings-box">
+        <div class="vault jar">
+          <div class="vault-label">Savings</div>
+          <div class="vault-amount">${escapeHtml(formatAmount(symbol, savings))}</div>
+          ${this._meter(interest, 100)}
+        </div>
+      </div>
     `);
   }
 
-  _tier(label, icon, earned, total, award) {
+  _icons(label, icon, earned, total, align) {
     const safe = escapeHtml(safeIcon(icon));
     const shown = Math.max(1, Math.min(Number(total) || 1, 24));
     const have = Math.max(0, Math.min(Number(earned) || 0, shown));
@@ -190,32 +211,39 @@ class RewardsTrackerCard extends HTMLElement {
         `<span class="token ${state}"><ha-icon icon="${safe}"></ha-icon></span>`
       );
     }
-    const action = award
-      ? `<button class="icon-btn" data-action="award_tick" aria-label="${escapeHtml(label)}"><ha-icon icon="mdi:plus"></ha-icon></button>`
-      : "";
     return `
-      <div class="tier">
-        <div class="meter-row">
-          <span>${escapeHtml(label)}</span>
-          ${action}
-        </div>
-        <div class="icon-row" role="img" aria-label="${escapeHtml(label)} ${have} of ${shown}">
-          ${tokens.join("")}
-        </div>
+      <div class="icon-row ${align}" role="img" aria-label="${escapeHtml(label)} ${have} of ${shown}">
+        ${tokens.join("")}
       </div>
     `;
   }
 
-  _meter(label, value, total) {
+  _swoosh(kind) {
+    const path =
+      kind === "to-stars"
+        ? `<path d="M36 18 C 110 6, 170 50, 248 32" fill="none" stroke="currentColor" stroke-width="6" stroke-linecap="round"/>
+           <path d="M230 18 L256 34 L226 44" fill="none" stroke="currentColor" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>`
+        : `<path d="M246 10 C 250 38, 194 58, 160 58" fill="none" stroke="currentColor" stroke-width="6" stroke-linecap="round"/>
+           <path d="M176 44 L156 66 L146 42" fill="none" stroke="currentColor" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>`;
+    return `<svg class="swoosh ${kind}" viewBox="0 0 320 70" aria-hidden="true">${path}</svg>`;
+  }
+
+  _buy({ action, rewardId, icon, name, price, disabled }) {
+    const rewardAttr = rewardId ? ` data-reward-id="${escapeHtml(rewardId)}"` : "";
+    return `
+      <button class="buy" data-action="${action}"${rewardAttr} aria-label="${escapeHtml(name)} ${escapeHtml(price)}" ${disabled ? "disabled" : ""}>
+        <ha-icon icon="${escapeHtml(safeIcon(icon))}"></ha-icon>
+        <span class="buy-name">${escapeHtml(name)}</span>
+        <span class="buy-cost">${escapeHtml(price)}</span>
+      </button>
+    `;
+  }
+
+  _meter(value, total) {
     const width = barWidth(value, total);
     return `
-      <div class="meter">
-        <div class="meter-row">
-          <span>${escapeHtml(label)}</span>
-        </div>
-        <div class="track" role="meter" aria-label="${escapeHtml(label)}" aria-valuemin="0" aria-valuemax="${total}" aria-valuenow="${Number(value) || 0}">
-          <div class="fill" style="width: ${width}%"></div>
-        </div>
+      <div class="track" role="meter" aria-label="Interest" aria-valuemin="0" aria-valuemax="${total}" aria-valuenow="${Number(value) || 0}">
+        <div class="fill" style="width: ${width}%"></div>
       </div>
     `;
   }
@@ -225,104 +253,185 @@ class RewardsTrackerCard extends HTMLElement {
       <style>
         :host { display: block; }
         ha-card { padding: 16px; }
-        .header {
+        .hero {
           display: flex;
           align-items: center;
-          gap: 12px;
-          font-size: 20px;
-          font-weight: 500;
-          margin-bottom: 12px;
+          gap: 14px;
+          margin-bottom: 18px;
         }
         .avatar {
-          width: 48px;
-          height: 48px;
+          width: 92px;
+          height: 92px;
           border-radius: 50%;
           object-fit: cover;
+          flex: 0 0 92px;
           background: var(--secondary-background-color, rgba(0, 0, 0, 0.06));
         }
-        .label, .hint {
-          color: var(--secondary-text-color);
+        .avatar.fallback {
+          display: grid;
+          place-items: center;
+          background: var(--primary-color);
+          color: var(--text-primary-color, #fff);
+          font-size: 42px;
+          font-weight: 700;
         }
-        .label { font-size: 12px; }
-        .value { font-size: 28px; font-weight: 500; line-height: 1.2; }
-        .meter, .tier { margin-bottom: 14px; }
-        .pot { margin-bottom: 4px; }
-        .savings {
-          display: flex;
-          align-items: center;
-          justify-content: space-between;
-          gap: 12px;
-          margin-top: 14px;
-          margin-bottom: 10px;
+        .hero-copy { min-width: 0; }
+        .hero-name {
+          font-size: 28px;
+          font-weight: 800;
+          line-height: 1.1;
+          margin-bottom: 8px;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          white-space: nowrap;
         }
-        .transfers { display: flex; gap: 8px; }
-        .meter-row, .spend {
-          display: flex;
+        .award {
+          display: inline-flex;
           align-items: center;
           gap: 8px;
+          border: none;
+          border-radius: 999px;
+          padding: 10px 18px 10px 12px;
+          background: var(--primary-color);
+          color: var(--text-primary-color, #fff);
+          font: inherit;
+          font-size: 18px;
+          font-weight: 800;
+          cursor: pointer;
         }
-        .meter-row { justify-content: space-between; font-size: 13px; margin-bottom: 6px; }
+        .award ha-icon {
+          --mdc-icon-size: 28px;
+          color: var(--text-primary-color, #fff);
+        }
         .icon-row {
           display: flex;
           flex-wrap: wrap;
-          gap: 4px;
+          gap: 2px;
+          width: 75%;
+        }
+        .icon-row.ticks { justify-content: flex-start; }
+        .icon-row.stars {
+          justify-content: flex-end;
+          margin-left: auto;
         }
         .token {
-          width: 32px;
-          height: 32px;
+          width: 48px;
+          height: 48px;
           display: grid;
           place-items: center;
         }
-        .token ha-icon { --mdc-icon-size: 28px; }
+        .token ha-icon { --mdc-icon-size: 44px; }
         .token.earned ha-icon { color: var(--primary-color); }
         .token.waiting ha-icon {
           color: var(--primary-text-color);
           opacity: 0.22;
         }
+        .swoosh {
+          display: block;
+          width: 82%;
+          height: 46px;
+          margin: 2px 0;
+          color: var(--primary-color);
+        }
+        .swoosh.to-stars { margin-left: 2%; }
+        .swoosh.to-bank { margin-left: auto; margin-right: 2%; }
+        .roof {
+          width: 0;
+          height: 0;
+          margin: 8px auto 0;
+          border-left: 46px solid transparent;
+          border-right: 46px solid transparent;
+          border-bottom: 20px solid var(--primary-color);
+        }
+        .vault {
+          width: 74%;
+          margin: 0 auto;
+          text-align: center;
+          border: 3px solid var(--primary-color);
+          border-radius: 4px 4px 22px 22px;
+          padding: 8px 12px 16px;
+          background: color-mix(in srgb, var(--primary-color) 14%, transparent);
+        }
+        .columns {
+          display: flex;
+          justify-content: space-between;
+          width: 70%;
+          margin: 0 auto 6px;
+        }
+        .columns span {
+          width: 8px;
+          height: 16px;
+          border-radius: 2px;
+          background: var(--primary-color);
+        }
+        .vault.jar {
+          border-radius: 32px;
+          margin-top: 18px;
+          padding-top: 14px;
+          padding-bottom: 16px;
+        }
+        .vault-label {
+          font-size: 13px;
+          font-weight: 800;
+          letter-spacing: 0.08em;
+          text-transform: uppercase;
+          color: var(--secondary-text-color);
+        }
+        .vault-amount {
+          font-size: 40px;
+          font-weight: 800;
+          line-height: 1.1;
+        }
         .track {
-          height: 18px;
+          height: 16px;
+          margin-top: 12px;
           border-radius: 99px;
           background: var(--divider-color);
           overflow: hidden;
         }
         .fill {
           height: 100%;
+          border-radius: 99px;
           background: var(--primary-color);
         }
-        .icon-btn, .spend {
-          font: inherit;
+        .shop {
+          display: grid;
+          grid-template-columns: repeat(3, 1fr);
+          gap: 8px;
+          margin-top: 16px;
+        }
+        .buy {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+          gap: 4px;
+          min-height: 108px;
+          padding: 10px 6px;
+          border: none;
+          border-radius: 18px;
+          background: var(--secondary-background-color, rgba(0, 0, 0, 0.06));
           color: var(--primary-text-color);
+          font: inherit;
+          text-align: center;
           cursor: pointer;
         }
-        .icon-btn {
-          width: 40px;
-          height: 40px;
-          border: none;
-          border-radius: 12px;
-          padding: 0;
-          display: grid;
-          place-items: center;
-          background: var(--secondary-background-color, rgba(0, 0, 0, 0.06));
+        .buy ha-icon { --mdc-icon-size: 34px; }
+        .buy-name {
+          font-size: 13px;
+          font-weight: 700;
+          line-height: 1.15;
+          max-height: 2.3em;
+          overflow: hidden;
         }
-        .icon-btn ha-icon { --mdc-icon-size: 22px; }
-        .icon-btn[disabled], .spend[disabled] {
+        .buy-cost { font-size: 16px; font-weight: 800; }
+        .buy[disabled] {
           opacity: 0.4;
           cursor: default;
         }
-        .spend {
-          width: 100%;
-          text-align: left;
-          border: none;
-          border-top: 1px solid var(--divider-color);
-          background: transparent;
-          padding: 10px 0;
-        }
-        .spend-name { flex: 1; }
-        .spend-cost { font-weight: 500; }
         ha-icon { color: var(--primary-color); }
-        .empty, .hint, .error { margin: 0; }
-        .error { color: var(--error-color, #db4437); margin-top: 8px; }
-        .hint { font-size: 13px; padding: 8px 0; }
+        .empty, .error { margin: 0; }
+        .error { color: var(--error-color, #db4437); margin: -8px 0 12px; }
       </style>
       <ha-card>${body}</ha-card>
     `;
