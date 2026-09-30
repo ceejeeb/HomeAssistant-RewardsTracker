@@ -8,6 +8,8 @@ from uuid import uuid4
 from homeassistant.config_entries import ConfigEntry, ConfigFlow, OptionsFlow
 from homeassistant.core import callback
 from homeassistant.helpers.selector import (
+    EntitySelector,
+    EntitySelectorConfig,
     IconSelector,
     NumberSelector,
     NumberSelectorConfig,
@@ -34,6 +36,7 @@ from .const import (
     CONF_INTEREST_PENCE,
     CONF_INTEREST_RATE,
     CONF_NAME,
+    CONF_PERSON,
     CONF_REWARDS,
     CONF_SAVINGS,
     CONF_STARS,
@@ -65,7 +68,7 @@ from .const import (
     DEFAULT_UNITS_EARNED,
     DOMAIN,
 )
-from .tracker import async_get_tracker
+from .tracker import async_get_tracker, linked_person_name, stored_person_id
 
 _ADD = "__add__"
 _DONE = "__done__"
@@ -118,6 +121,10 @@ def _time_unit() -> SelectSelector:
     )
 
 
+def _person_selector() -> EntitySelector:
+    return EntitySelector(EntitySelectorConfig(include_domains=["person"]))
+
+
 def _present(defaults: dict[str, Any], key: str, fallback: Any) -> Any:
     if key in defaults:
         return defaults[key]
@@ -138,9 +145,18 @@ def _settings_schema(defaults: dict[str, Any]) -> vol.Schema:
     rate = _present(defaults, CONF_INTEREST_RATE, None)
     if rate is None:
         rate = _present(defaults, CONF_DAILY_INTEREST_PERCENT, DEFAULT_INTEREST_RATE)
+    person_id = str(_present(defaults, CONF_PERSON, "") or "")
+    person_field = (
+        vol.Optional(CONF_PERSON, default=person_id)
+        if person_id
+        else vol.Optional(CONF_PERSON)
+    )
     return vol.Schema(
         {
-            vol.Required(CONF_NAME, default=_present(defaults, CONF_NAME, "")): TextSelector(),
+            person_field: _person_selector(),
+            vol.Optional(
+                CONF_NAME, default=_present(defaults, CONF_NAME, "")
+            ): TextSelector(),
             vol.Required(
                 CONF_TIER1_NAME,
                 default=_present(defaults, CONF_TIER1_NAME, DEFAULT_TIER1_NAME),
@@ -215,7 +231,8 @@ def _clean_settings(user_input: dict[str, Any]) -> dict[str, Any]:
     tier1_count = _whole(user_input[CONF_TIER1_COUNT])
     tier2_count = _whole(user_input[CONF_TIER2_COUNT])
     return {
-        CONF_NAME: str(user_input[CONF_NAME]).strip(),
+        CONF_NAME: str(user_input.get(CONF_NAME) or "").strip(),
+        CONF_PERSON: stored_person_id(user_input),
         CONF_TIER1_NAME: str(user_input[CONF_TIER1_NAME]).strip(),
         CONF_TIER1_ICON: str(user_input[CONF_TIER1_ICON]).strip(),
         CONF_TIER1_COUNT: tier1_count,
@@ -233,6 +250,35 @@ def _clean_settings(user_input: dict[str, Any]) -> dict[str, Any]:
         CONF_TICKS_PER_STAR: tier1_count,
         CONF_STARS_PER_POUND: tier2_count,
     }
+
+
+def _apply_person(hass, settings: dict[str, Any]) -> dict[str, str]:
+    """Use the linked person's name. Report an error when that person is missing."""
+    person_id = settings.get(CONF_PERSON) or ""
+    if not person_id:
+        return {}
+    name = linked_person_name(hass, person_id)
+    if not name:
+        return {CONF_PERSON: "person_missing"}
+    settings[CONF_NAME] = name
+    return {}
+
+
+def _entry_label(hass, entry) -> str:
+    data = entry.options or entry.data
+    linked = linked_person_name(hass, stored_person_id(data))
+    return linked or str(data.get(CONF_NAME) or entry.title)
+
+
+def _person_taken(hass, person_id: str, ignore_entry_id: str | None = None) -> bool:
+    if not person_id:
+        return False
+    for entry in hass.config_entries.async_entries(DOMAIN):
+        if ignore_entry_id and entry.entry_id == ignore_entry_id:
+            continue
+        if stored_person_id(entry.options or entry.data) == person_id:
+            return True
+    return False
 
 
 def _icon_ok(icon: str) -> bool:
@@ -310,7 +356,7 @@ class RewardsTrackerConfigFlow(ConfigFlow, domain=DOMAIN):
         for entry in self._async_current_entries():
             if ignore_entry_id and entry.entry_id == ignore_entry_id:
                 continue
-            existing = (entry.options or entry.data).get(CONF_NAME, entry.title)
+            existing = _entry_label(self.hass, entry)
             if str(existing).casefold() == needle:
                 return True
         return False
@@ -322,9 +368,12 @@ class RewardsTrackerConfigFlow(ConfigFlow, domain=DOMAIN):
         if user_input is not None:
             self._settings = _clean_settings(user_input)
             defaults = self._settings
-            errors = _validate_settings(self._settings)
+            errors = _apply_person(self.hass, self._settings)
+            errors.update(_validate_settings(self._settings))
             if not errors and self._name_taken(self._settings[CONF_NAME]):
                 errors[CONF_NAME] = "name_used"
+            if not errors and _person_taken(self.hass, self._settings[CONF_PERSON]):
+                errors[CONF_PERSON] = "person_used"
             if not errors:
                 return await self.async_step_rewards_menu()
 
@@ -405,9 +454,14 @@ class RewardsTrackerOptionsFlow(OptionsFlow):
         if user_input is not None:
             settings = _clean_settings(user_input)
             defaults = settings
-            errors = _validate_settings(settings)
+            errors = _apply_person(self.hass, settings)
+            errors.update(_validate_settings(settings))
             if not errors and self._name_taken(settings[CONF_NAME]):
                 errors[CONF_NAME] = "name_used"
+            if not errors and _person_taken(
+                self.hass, settings[CONF_PERSON], self.config_entry.entry_id
+            ):
+                errors[CONF_PERSON] = "person_used"
             if not errors:
                 updated = dict(current)
                 updated.update(settings)
@@ -424,7 +478,7 @@ class RewardsTrackerOptionsFlow(OptionsFlow):
         for entry in self.hass.config_entries.async_entries(DOMAIN):
             if entry.entry_id == self.config_entry.entry_id:
                 continue
-            existing = (entry.options or entry.data).get(CONF_NAME, entry.title)
+            existing = _entry_label(self.hass, entry)
             if str(existing).casefold() == needle:
                 return True
         return False

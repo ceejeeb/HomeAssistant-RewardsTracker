@@ -30,7 +30,7 @@ Home Assistant 2025.1 or newer is required.
 
 ## Add a child
 
-The first screen asks for the child's name, then a name, icon, and count for each tier, how much money a full second tier pays, the currency symbol, and the interest. Interest is a percent over a period, such as 1% every 1 day, plus a separate calculation interval, such as every hour. The defaults are Ticks, a check icon, 5, then Stars, a star icon, 3, paying £1 at 1% every 1 day, calculated every day.
+The first screen can link a Home Assistant person. That person's name is used, and their picture shows on the card. Leave the person empty to type a name instead. Then choose a name, icon, and count for each tier, how much money a full second tier pays, the currency symbol, and the interest. Interest is a percent over a period, such as 1% every 1 day, plus a separate calculation interval, such as every hour. The defaults are Ticks, a check icon, 5, then Stars, a star icon, 3, paying £1 at 1% every 1 day, calculated every day.
 
 The next screen is the spend list. Add a way to spend, for example Buy Book at 3 with the icon `mdi:book-open-variant`, then finish. You can add more later. `mdi` icons work without anything else installed.
 
@@ -45,13 +45,13 @@ type: custom:rewards-tracker-card
 entity: sensor.charlie_money
 ```
 
-The card runs top to bottom: ticks, stars, money, then savings. The plus on the ticks row awards one. Spend buttons sit under the money. Two arrows beside savings move 1 into savings or back out. A button is faded when that balance cannot cover it. The interest bar sits under savings.
+The card runs top to bottom: ticks, stars, money, then savings. A linked person's picture sits beside their name. The plus on the ticks row awards one. Spend buttons sit under the money. Two arrows beside savings move 1 into savings or back out. A button is faded when that balance cannot cover it. The interest bar sits under savings.
 
 If the dashboard is in YAML mode, add the resource yourself:
 
 ```yaml
 resources:
-  - url: /rewards_tracker/rewards-tracker-card.js?v=0.1.4
+  - url: /rewards_tracker/rewards-tracker-card.js?v=0.1.5
     type: module
 ```
 

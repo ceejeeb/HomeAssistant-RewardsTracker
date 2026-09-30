@@ -8,7 +8,10 @@ import logging
 from typing import Any, Callable
 
 from homeassistant.core import HomeAssistant, callback
-from homeassistant.helpers.event import async_track_point_in_utc_time
+from homeassistant.helpers.event import (
+    async_track_point_in_utc_time,
+    async_track_state_change_event,
+)
 from homeassistant.helpers.storage import Store
 from homeassistant.util import dt as dt_util
 
@@ -41,6 +44,7 @@ from .const import (
     CONF_INTEREST_RATE,
     CONF_INTEREST_REMAINDER,
     CONF_NAME,
+    CONF_PERSON,
     CONF_REWARDS,
     CONF_SAVINGS,
     CONF_STARS,
@@ -106,6 +110,7 @@ def normalize_settings(raw: dict[str, Any]) -> dict[str, Any]:
     symbol = str(raw.get(CONF_CURRENCY_SYMBOL) or DEFAULT_CURRENCY_SYMBOL).strip()
     return {
         CONF_NAME: str(raw.get(CONF_NAME) or "").strip(),
+        CONF_PERSON: stored_person_id(raw),
         CONF_TIER1_NAME: _setting_label(raw.get(CONF_TIER1_NAME), DEFAULT_TIER1_NAME),
         CONF_TIER1_ICON: _setting_icon(raw.get(CONF_TIER1_ICON), DEFAULT_TIER1_ICON),
         CONF_TIER1_COUNT: tier1_count,
@@ -128,6 +133,22 @@ def normalize_settings(raw: dict[str, Any]) -> dict[str, Any]:
         CONF_TICKS_PER_STAR: tier1_count,
         CONF_STARS_PER_POUND: tier2_count,
     }
+
+
+def stored_person_id(raw: dict[str, Any]) -> str:
+    """Return a person entity id, or an empty string when none is linked."""
+    text = str(raw.get(CONF_PERSON) or "").strip()
+    return text if text.startswith("person.") else ""
+
+
+def linked_person_name(hass: HomeAssistant, person_id: str) -> str:
+    """Return the current name of a person entity."""
+    if not person_id:
+        return ""
+    state = hass.states.get(person_id)
+    if state is None:
+        return ""
+    return str(state.name or "").strip()
 
 
 def _setting_count(value: Any, default: int, minimum: int) -> int:
@@ -179,6 +200,7 @@ class ChildTracker:
         self._lock = asyncio.Lock()
         self._listeners: list[Listener] = []
         self._unsub_interest: Callable[[], None] | None = None
+        self._unsub_person: Callable[[], None] | None = None
         self._interest_stopped = False
 
     @property
@@ -188,8 +210,16 @@ class ChildTracker:
 
     @property
     def name(self) -> str:
-        """Return the child's name."""
+        """Return the linked person's name, or the name saved on the child."""
+        linked = linked_person_name(self.hass, self.person_entity_id)
+        if linked:
+            return linked
         return str(self.settings.get(CONF_NAME) or self.entry.title)
+
+    @property
+    def person_entity_id(self) -> str:
+        """Return the linked person, if this child has one."""
+        return stored_person_id(self.settings)
 
     @property
     def currency(self) -> str:
@@ -292,11 +322,44 @@ class ChildTracker:
         self._unsub_interest = async_track_point_in_utc_time(self.hass, _run, nxt)
 
     async def async_close(self) -> None:
-        """Stop the interest timer."""
+        """Stop the interest timer and the person watcher."""
         self._interest_stopped = True
         if self._unsub_interest is not None:
             self._unsub_interest()
             self._unsub_interest = None
+        if self._unsub_person is not None:
+            self._unsub_person()
+            self._unsub_person = None
+
+    def async_watch_person(self) -> None:
+        """Refresh the card when the linked person's name or picture changes."""
+        if self._unsub_person is not None:
+            self._unsub_person()
+            self._unsub_person = None
+        person_id = self.person_entity_id
+        if not person_id:
+            return
+
+        @callback
+        def _changed(event) -> None:
+            old = event.data.get("old_state")
+            new = event.data.get("new_state")
+            old_name = old.name if old else ""
+            new_name = new.name if new else ""
+            old_picture = old.attributes.get("entity_picture") if old else None
+            new_picture = new.attributes.get("entity_picture") if new else None
+            if old_name == new_name and old_picture == new_picture:
+                return
+            resolved = str(new_name or self.settings.get(CONF_NAME) or "").strip()
+            if resolved and resolved != self.entry.title:
+                self.hass.config_entries.async_update_entry(self.entry, title=resolved)
+                return
+            for listener in list(self._listeners):
+                listener()
+
+        self._unsub_person = async_track_state_change_event(
+            self.hass, [person_id], _changed
+        )
 
     async def async_apply_due_interest(self) -> None:
         """Apply each whole calculation interval that has elapsed, up to 31 days."""

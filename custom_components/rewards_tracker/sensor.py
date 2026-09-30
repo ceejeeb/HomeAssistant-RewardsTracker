@@ -126,6 +126,7 @@ class RewardSensor(SensorEntity):
         return {
             "role": self.entity_description.key,
             "child_name": self._tracker.name,
+            "person": self._tracker.person_entity_id or None,
             "ticks": pot.ticks,
             "stars": pot.stars,
             "balance": pot.balance,

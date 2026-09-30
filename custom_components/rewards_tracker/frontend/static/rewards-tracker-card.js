@@ -59,11 +59,16 @@ class RewardsTrackerCard extends HTMLElement {
     }
   }
 
-  set hass(hass) {
+    set hass(hass) {
     this._hass = hass;
     const state = this.config?.entity ? hass.states[this.config.entity] : null;
+    const personId = state?.attributes?.person || "";
+    const person = personId ? hass.states[personId] : null;
+    const personKey = person
+      ? `${person.attributes?.friendly_name || ""}|${person.attributes?.entity_picture || ""}`
+      : "";
     const key = state
-      ? `${state.last_updated}|${JSON.stringify(state.attributes)}|${this._error}`
+      ? `${state.last_updated}|${JSON.stringify(state.attributes)}|${personKey}|${this._error}`
       : `missing|${this._error}`;
     if (key === this._key && this.shadowRoot.childElementCount) {
       return;
@@ -105,6 +110,13 @@ class RewardsTrackerCard extends HTMLElement {
       return;
     }
 
+    const personId = attr.person || "";
+    const person = personId ? this._hass.states[personId] : null;
+    const picture = person?.attributes?.entity_picture || "";
+    const displayName = person?.attributes?.friendly_name || attr.child_name;
+    const avatar = picture
+      ? `<img class="avatar" src="${escapeHtml(picture)}" alt="">`
+      : "";
     const symbol = attr.currency_symbol || "";
     const balance = Number(attr.balance);
     const savings = Number(attr.savings);
@@ -140,7 +152,7 @@ class RewardsTrackerCard extends HTMLElement {
       : `<p class="hint">No ways to spend yet. Add them from Configure on the integration.</p>`;
 
     this.shadowRoot.innerHTML = this._shell(`
-      <div class="header">${escapeHtml(attr.child_name)}</div>
+      <div class="header">${avatar}<span>${escapeHtml(displayName)}</span></div>
       ${error}
       ${this._tier(tier1Name, tier1Icon, ticks, tier1Count, true)}
       ${this._tier(tier2Name, tier2Icon, stars, tier2Count, false)}
@@ -214,9 +226,19 @@ class RewardsTrackerCard extends HTMLElement {
         :host { display: block; }
         ha-card { padding: 16px; }
         .header {
+          display: flex;
+          align-items: center;
+          gap: 12px;
           font-size: 20px;
           font-weight: 500;
           margin-bottom: 12px;
+        }
+        .avatar {
+          width: 48px;
+          height: 48px;
+          border-radius: 50%;
+          object-fit: cover;
+          background: var(--secondary-background-color, rgba(0, 0, 0, 0.06));
         }
         .label, .hint {
           color: var(--secondary-text-color);

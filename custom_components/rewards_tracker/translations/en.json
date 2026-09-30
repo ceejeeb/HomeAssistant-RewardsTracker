@@ -5,6 +5,7 @@
         "title": "Add a child",
         "description": "Name the two tiers and choose an icon for each. A full second tier pays out spending money. Savings earn a percent over a period you choose, and a separate timer decides how often that interest is worked out.",
         "data": {
+          "person": "Person",
           "name": "Name",
           "tier1_name": "First tier name",
           "tier1_icon": "First tier icon",
@@ -21,6 +22,8 @@
           "currency_symbol": "Currency symbol"
         },
         "data_description": {
+          "person": "Optional. The child's name and picture come from this person.",
+          "name": "Used when no person is linked.",
           "tier1_count": "For example, 5 ticks become 1 star.",
           "tier2_count": "For example, 3 stars pay out the money amount below.",
           "units_earned": "How many units of the currency are added when the second tier fills.",
@@ -46,7 +49,9 @@
       }
     },
     "error": {
-      "name_required": "Enter a name.",
+      "name_required": "Enter a name, or link a person.",
+      "person_missing": "That person is not available.",
+      "person_used": "That person is already linked to a child.",
       "name_used": "A child with that name already exists.",
       "tier_name_required": "Enter a name for this tier.",
       "tier_name_too_long": "Use 24 characters or fewer.",
@@ -68,6 +73,7 @@
       "settings": {
         "title": "Rules and currency",
         "data": {
+          "person": "Person",
           "name": "Name",
           "tier1_name": "First tier name",
           "tier1_icon": "First tier icon",
@@ -84,6 +90,8 @@
           "currency_symbol": "Currency symbol"
         },
         "data_description": {
+          "person": "Optional. The child's name and picture come from this person.",
+          "name": "Used when no person is linked.",
           "tier1_count": "Counts already at or above this number convert the next time one is awarded, or when you correct balances.",
           "tier2_count": "The second tier converts the same way and pays the money amount below.",
           "units_earned": "How many units of the currency are added when the second tier fills.",
@@ -128,7 +136,9 @@
       }
     },
     "error": {
-      "name_required": "Enter a name.",
+      "name_required": "Enter a name, or link a person.",
+      "person_missing": "That person is not available.",
+      "person_used": "That person is already linked to a child.",
       "name_used": "A child with that name already exists.",
       "tier_name_required": "Enter a name for this tier.",
       "tier_name_too_long": "Use 24 characters or fewer.",
