@@ -45,13 +45,13 @@ type: custom:rewards-tracker-card
 entity: sensor.charlie_money
 ```
 
-The card shows a large picture and name, with a coloured button to award one of the first tier. Ticks sit on the left and stars on the right, with a curve between them and another curve down to the bank. Spend choices, plus save and take-out, are boxes three across. Savings sits under that, with the interest bar inside the box. A button is faded when that balance cannot cover it.
+The card shows a large picture and name, with a button that awards one of the first tier. Ticks and stars are centred. Money and savings use the same rounded box, and the interest bar sits inside savings. Spend choices, plus save and take-out, are boxes three across. A button is faded when that balance cannot cover it.
 
 If the dashboard is in YAML mode, add the resource yourself:
 
 ```yaml
 resources:
-  - url: /rewards_tracker/rewards-tracker-card.js?v=0.1.6
+  - url: /rewards_tracker/rewards-tracker-card.js?v=0.1.7
     type: module
 ```
 

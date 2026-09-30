@@ -154,24 +154,18 @@ class RewardsTrackerCard extends HTMLElement {
         ${avatar}
         <div class="hero-copy">
           <div class="hero-name">${escapeHtml(displayName)}</div>
-          <button class="award" data-action="award_tick">
+          <button class="award" data-action="award_tick" aria-label="${escapeHtml(tier1Name)}">
+            <span class="award-plus" aria-hidden="true">+</span>
             <ha-icon icon="${escapeHtml(safeIcon(tier1Icon))}"></ha-icon>
-            <span>${escapeHtml(tier1Name)}</span>
           </button>
         </div>
       </div>
       ${error}
-      ${this._icons(tier1Name, tier1Icon, ticks, tier1Count, "ticks")}
-      ${this._swoosh("to-stars")}
-      ${this._icons(tier2Name, tier2Icon, stars, tier2Count, "stars")}
-      ${this._swoosh("to-bank")}
-      <div class="bank">
-        <div class="roof" aria-hidden="true"></div>
-        <div class="vault">
-          <div class="columns" aria-hidden="true"><span></span><span></span><span></span></div>
-          <div class="vault-label">Bank</div>
-          <div class="vault-amount">${escapeHtml(formatAmount(symbol, balance))}</div>
-        </div>
+      ${this._icons(tier1Name, tier1Icon, ticks, tier1Count)}
+      ${this._icons(tier2Name, tier2Icon, stars, tier2Count)}
+      <div class="vault">
+        <div class="vault-label">Bank</div>
+        <div class="vault-amount">${escapeHtml(formatAmount(symbol, balance))}</div>
       </div>
       <div class="shop">
         ${shop}
@@ -191,7 +185,7 @@ class RewardsTrackerCard extends HTMLElement {
         })}
       </div>
       <div class="savings-box">
-        <div class="vault jar">
+        <div class="vault savings">
           <div class="vault-label">Savings</div>
           <div class="vault-amount">${escapeHtml(formatAmount(symbol, savings))}</div>
           ${this._meter(interest, 100)}
@@ -200,7 +194,7 @@ class RewardsTrackerCard extends HTMLElement {
     `);
   }
 
-  _icons(label, icon, earned, total, align) {
+  _icons(label, icon, earned, total) {
     const safe = escapeHtml(safeIcon(icon));
     const shown = Math.max(1, Math.min(Number(total) || 1, 24));
     const have = Math.max(0, Math.min(Number(earned) || 0, shown));
@@ -212,20 +206,10 @@ class RewardsTrackerCard extends HTMLElement {
       );
     }
     return `
-      <div class="icon-row ${align}" role="img" aria-label="${escapeHtml(label)} ${have} of ${shown}">
+      <div class="icon-row" role="img" aria-label="${escapeHtml(label)} ${have} of ${shown}">
         ${tokens.join("")}
       </div>
     `;
-  }
-
-  _swoosh(kind) {
-    const path =
-      kind === "to-stars"
-        ? `<path d="M36 18 C 110 6, 170 50, 248 32" fill="none" stroke="currentColor" stroke-width="6" stroke-linecap="round"/>
-           <path d="M230 18 L256 34 L226 44" fill="none" stroke="currentColor" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>`
-        : `<path d="M246 10 C 250 38, 194 58, 160 58" fill="none" stroke="currentColor" stroke-width="6" stroke-linecap="round"/>
-           <path d="M176 44 L156 66 L146 42" fill="none" stroke="currentColor" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>`;
-    return `<svg class="swoosh ${kind}" viewBox="0 0 320 70" aria-hidden="true">${path}</svg>`;
   }
 
   _buy({ action, rewardId, icon, name, price, disabled }) {
@@ -288,17 +272,19 @@ class RewardsTrackerCard extends HTMLElement {
         .award {
           display: inline-flex;
           align-items: center;
-          gap: 8px;
+          gap: 2px;
           border: none;
           border-radius: 999px;
-          padding: 10px 18px 10px 12px;
+          padding: 8px 14px;
           background: var(--primary-color);
           color: var(--text-primary-color, #fff);
           font: inherit;
-          font-size: 18px;
+          font-size: 28px;
           font-weight: 800;
+          line-height: 1;
           cursor: pointer;
         }
+        .award-plus { color: var(--text-primary-color, #fff); }
         .award ha-icon {
           --mdc-icon-size: 28px;
           color: var(--text-primary-color, #fff);
@@ -306,13 +292,10 @@ class RewardsTrackerCard extends HTMLElement {
         .icon-row {
           display: flex;
           flex-wrap: wrap;
+          justify-content: center;
           gap: 2px;
-          width: 75%;
-        }
-        .icon-row.ticks { justify-content: flex-start; }
-        .icon-row.stars {
-          justify-content: flex-end;
-          margin-left: auto;
+          width: 100%;
+          margin-bottom: 8px;
         }
         .token {
           width: 48px;
@@ -326,50 +309,16 @@ class RewardsTrackerCard extends HTMLElement {
           color: var(--primary-text-color);
           opacity: 0.22;
         }
-        .swoosh {
-          display: block;
-          width: 82%;
-          height: 46px;
-          margin: 2px 0;
-          color: var(--primary-color);
-        }
-        .swoosh.to-stars { margin-left: 2%; }
-        .swoosh.to-bank { margin-left: auto; margin-right: 2%; }
-        .roof {
-          width: 0;
-          height: 0;
-          margin: 8px auto 0;
-          border-left: 46px solid transparent;
-          border-right: 46px solid transparent;
-          border-bottom: 20px solid var(--primary-color);
-        }
         .vault {
           width: 74%;
-          margin: 0 auto;
+          margin: 12px auto 0;
           text-align: center;
           border: 3px solid var(--primary-color);
-          border-radius: 4px 4px 22px 22px;
-          padding: 8px 12px 16px;
+          border-radius: 32px;
+          padding: 14px 12px 16px;
           background: color-mix(in srgb, var(--primary-color) 14%, transparent);
         }
-        .columns {
-          display: flex;
-          justify-content: space-between;
-          width: 70%;
-          margin: 0 auto 6px;
-        }
-        .columns span {
-          width: 8px;
-          height: 16px;
-          border-radius: 2px;
-          background: var(--primary-color);
-        }
-        .vault.jar {
-          border-radius: 32px;
-          margin-top: 18px;
-          padding-top: 14px;
-          padding-bottom: 16px;
-        }
+        .vault.savings { margin-top: 18px; }
         .vault-label {
           font-size: 13px;
           font-weight: 800;
