@@ -122,7 +122,7 @@ def _time_unit() -> SelectSelector:
 
 
 def _person_selector() -> EntitySelector:
-    return EntitySelector(EntitySelectorConfig(include_domains=["person"]))
+    return EntitySelector(EntitySelectorConfig(domain="person"))
 
 
 def _present(defaults: dict[str, Any], key: str, fallback: Any) -> Any:
